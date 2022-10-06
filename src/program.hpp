@@ -3,6 +3,8 @@
 
 #include "sdl.hpp"
 #include "types.hpp"
+#include "strings.hpp"
+#include "json.hpp"
 
 void init_program() {
   
@@ -24,9 +26,31 @@ void init_program() {
         } break;
         
         case SDL_DROPFILE : {
-          char* dropped_filepath = event.drop.file;
-          SDL_ShowSimpleMessageBox( SDL_MESSAGEBOX_INFORMATION, "File dropped on window", dropped_filepath, sdl_params.window );
-          SDL_free( dropped_filepath );
+          
+          char* dropped_filepath_orig;
+          dropped_filepath_orig = event.drop.file;
+          
+          u32 filepath_length = string_length( dropped_filepath_orig );
+          
+          char* filepath = init_char_star( filepath_length + 1 );
+          copy_string_into_char_star( dropped_filepath_orig, filepath, filepath_length );
+          
+          // SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "filepath_length is %d\n", filepath_length );
+          SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "filepath is %s\n", filepath );
+          
+          ReadFileResult glb_file = read_entire_file( filepath );
+          u32 json_bytes = json_size_in_bytes( &glb_file );
+          
+          SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "json_bytes is %d\n", json_bytes );
+          
+          char* json = init_char_star( json_bytes + 1 );
+          pull_out_json_string( &glb_file, json, json_bytes );
+          
+          SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "json is %s\n", json );
+          
+          SDL_free( dropped_filepath_orig );
+          free( filepath );
+          
         } break;
       
       default:
