@@ -1,0 +1,7 @@
+* text=auto
+
+*.* text eol=lf
+
+*.wav filter=lfs diff=lfs merge=lfs binary
+*.glb filter=lfs diff=lfs merge=lfs binary
+*.png filter=lfs diff=lfs merge=lfs binary
