@@ -2,6 +2,7 @@
 #define TYPES_HPP
 
 #include <stdint.h>
+#include <cstddef>
 
 typedef int8_t    s8;
 typedef int16_t   s16;

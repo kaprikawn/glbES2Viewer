@@ -1,6 +1,8 @@
-#include <iostream>
+#include "program.hpp"
 
 int main() {
-  std::cout << "Hey, this works" << std::endl;
+  
+  init_program();
+  
   return 0;
 }
