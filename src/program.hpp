@@ -6,6 +6,18 @@
 #include "strings.hpp"
 #include "json.hpp"
 
+bool check_is_glb_file ( ReadFileResult* file ) {
+  bool result = false;
+  
+  GltfHeader* gltf_header = ( GltfHeader* ) file -> contents;
+  
+  if ( gltf_header -> magic == 1179937895 ) {
+    result = true;
+  }
+  // TODO : add error message
+  return result;
+}
+
 void init_program() {
   
   SDLParams sdl_params;
@@ -39,6 +51,12 @@ void init_program() {
           SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "filepath is %s\n", filepath );
           
           ReadFileResult glb_file = read_entire_file( filepath );
+          
+          if ( !check_is_glb_file( &glb_file ) ) {
+            SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "ERROR - Is not a glb file\n" );
+            break;
+          }
+          
           u32 json_bytes = json_size_in_bytes( &glb_file );
           
           SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "json_bytes is %d\n", json_bytes );
