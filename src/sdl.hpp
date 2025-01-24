@@ -14,7 +14,7 @@
 #ifdef _WIN32
 
 #include "SDL.h"
-#include <GL/glew.h>
+#include "GL/glew.h"
 
 #elif __linux__
 
