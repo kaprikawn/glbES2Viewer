@@ -1,0 +1,27 @@
+This sets up your build task if you're building in Windows, copy/move this file to 'tasks.json', remove this comment, then press CTRL+Shift+b to build or F5 to enter debug mode
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build",
+      "command": "${workspaceFolder}\\scripts\\build.bat",
+      "type": "shell",
+      "args": [],
+      "options": {
+        "cwd": "${workspaceFolder}\\scripts"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "group": {
+          "kind": "build"
+        , "isDefault": true
+      }
+    }
+  ]
+}
