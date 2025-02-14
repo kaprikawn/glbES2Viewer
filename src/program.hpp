@@ -6,6 +6,17 @@
 #include "strings.hpp"
 #include "json.hpp"
 
+class Glb_imported_object {
+  private :
+    char* json;
+  public :
+    void update_json( ReadFileResult* glb_file ) {
+      u32 json_bytes = json_size_in_bytes( glb_file );
+      json = init_char_star( json_bytes + 1 );
+      pull_out_json_string( glb_file, json, json_bytes );
+    }
+};
+
 bool check_is_glb_file ( ReadFileResult* file ) {
   bool result = false;
   
@@ -14,7 +25,7 @@ bool check_is_glb_file ( ReadFileResult* file ) {
   if ( gltf_header -> magic == 1179937895 ) {
     result = true;
   }
-  // TODO : add error message
+  // @TODO : add error message
   return result;
 }
 
@@ -63,6 +74,9 @@ void init_program() {
           
           char* json = init_char_star( json_bytes + 1 );
           pull_out_json_string( &glb_file, json, json_bytes );
+          
+          Glb_imported_object glb_imported_object;
+          glb_imported_object.update_json( &glb_file );
           
           SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "json is %s\n", json );
           
