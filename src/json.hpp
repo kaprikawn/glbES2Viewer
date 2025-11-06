@@ -62,7 +62,7 @@ struct JsonString {
   char* json_string;
 };
 
-struct GltfbufferViewInfo {
+struct GltfBufferViewInfo {
   u32 buffer_view;
   u32 component_type;
   u32 gltf_count; // count as defined by the JSON
@@ -1002,9 +1002,9 @@ MeshData populate_mesh_data( u32 target_mesh_index, const char* json_string, Rea
   return result;
 }
 
-GltfbufferViewInfo get_glft_buffer_view_info( u32 target_mesh_index, const char* gltf_contents, JsonString json, s32 content_type ) {
+GltfBufferViewInfo get_glft_buffer_view_info( u32 target_mesh_index, const char* gltf_contents, JsonString json, s32 content_type ) {
   
-  GltfbufferViewInfo result = {};
+  GltfBufferViewInfo result = {};
   
   char*   json_string     = json.json_string;
   u32  json_char_count = json.json_char_count;

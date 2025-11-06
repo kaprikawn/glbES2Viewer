@@ -6,14 +6,82 @@
 #include "strings.hpp"
 #include "json.hpp"
 
+class Mesh_Data {
+  private : 
+    u32 mesh_index;
+    GltfBufferViewInfo gltf_buffer_view_info;
+    MeshPositionIndices mesh_position_indices;
+    
+    AccessorData vertex_accessor_data;
+    AccessorData normal_accessor_data;
+    AccessorData index_accessor_data;
+    AccessorData tex_coord0_accessor_data;
+    BufferViewData vertex_buffer_view_data;
+    BufferViewData normal_buffer_view_data;
+    BufferViewData index_buffer_view_data;
+    BufferViewData tex_coord0_buffer_view_data;
+    
+  public : 
+    
+    void set_mesh_index ( u32 mesh_index_value ) {
+      mesh_index = mesh_index_value;
+    }
+    
+    void set_buffer_view_data ( const char* json_string, u32 json_char_count ) {
+      
+      mesh_position_indices       = get_mesh_position_indices ( mesh_index, json_string, json_char_count );
+      
+      vertex_accessor_data        = get_accessor_data ( mesh_position_indices.vertices, json_string, json_char_count );
+      normal_accessor_data        = get_accessor_data ( mesh_position_indices.normals, json_string, json_char_count );
+      index_accessor_data         = get_accessor_data ( mesh_position_indices.indices, json_string, json_char_count );
+      tex_coord0_accessor_data    = get_accessor_data ( mesh_position_indices.texcoord_0, json_string, json_char_count );
+      
+      vertex_buffer_view_data     = get_buffer_view_data ( vertex_accessor_data.buffer_view, json_string, json_char_count );
+      normal_buffer_view_data     = get_buffer_view_data ( normal_accessor_data.buffer_view, json_string, json_char_count );
+      index_buffer_view_data      = get_buffer_view_data ( index_accessor_data.buffer_view, json_string, json_char_count );
+      tex_coord0_buffer_view_data = get_buffer_view_data ( tex_coord0_accessor_data.buffer_view, json_string, json_char_count );
+      
+      int g = 4;
+    }
+    
+    
+    
+};
+
 class Glb_imported_object {
   private :
-    char* json;
+    char*       json;
+    u32         json_bytes;
+    u32         mesh_count;
+    Mesh_Data*  mesh_data_array;
+    
   public :
     void update_json( ReadFileResult* glb_file ) {
-      u32 json_bytes = json_size_in_bytes( glb_file );
-      json = init_char_star( json_bytes + 1 );
-      pull_out_json_string( glb_file, json, json_bytes );
+      u32 this_json_bytes = json_size_in_bytes( glb_file );
+      json = init_char_star( this_json_bytes + 1 );
+      pull_out_json_string( glb_file, json, this_json_bytes );
+      json_bytes = this_json_bytes;
+    }
+    
+    void set_mesh_count () {
+      u32 this_mesh_count = count_meshes ( json, json_bytes );
+      mesh_count = this_mesh_count;
+    }
+    
+    void populate_mesh_data() {
+      
+      size_t bytes = size_t ( mesh_count * sizeof( Mesh_Data ) );
+      mesh_data_array = ( Mesh_Data* ) malloc ( bytes );
+      
+      int g = 8;
+      
+      for ( u32 i = 0; i < mesh_count; i++ ) {
+        mesh_data_array[ i ].set_mesh_index ( i );
+        mesh_data_array[ i ].set_buffer_view_data ( json, json_bytes );
+        
+        int f = 43;
+      }
+      
     }
 };
 
@@ -77,6 +145,9 @@ void init_program() {
           
           Glb_imported_object glb_imported_object;
           glb_imported_object.update_json( &glb_file );
+          
+          glb_imported_object.set_mesh_count();
+          glb_imported_object.populate_mesh_data();
           
           SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "json is %s\n", json );
           
