@@ -5,6 +5,7 @@
 #include "types.hpp"
 #include "strings.hpp"
 #include "json.hpp"
+#include "shaders.hpp"
 
 class Mesh_Data {
   private : 
@@ -27,6 +28,16 @@ class Mesh_Data {
       mesh_index = mesh_index_value;
     }
     
+    u32 get_byte_length ( const char* type ) {
+      u32 result = 0;
+      if ( strings_are_equal( "vertex", type ) ) {
+        result = vertex_buffer_view_data.byte_length;
+      } else if ( strings_are_equal( "index", type ) ) {
+        result = index_buffer_view_data.byte_length;
+      }
+      return result;
+    }
+    
     void set_buffer_view_data ( const char* json_string, u32 json_char_count ) {
       
       mesh_position_indices       = get_mesh_position_indices ( mesh_index, json_string, json_char_count );
@@ -46,6 +57,7 @@ class Mesh_Data {
     
     
     
+    
 };
 
 class Glb_imported_object {
@@ -54,6 +66,9 @@ class Glb_imported_object {
     u32         json_bytes;
     u32         mesh_count;
     Mesh_Data*  mesh_data_array;
+    
+    u32         vertex_data_total_bytes = 0;
+    u32         index_data_total_bytes  = 0;
     
   public :
     void update_json( ReadFileResult* glb_file ) {
@@ -81,8 +96,36 @@ class Glb_imported_object {
         
         int f = 43;
       }
-      
     }
+    
+    void calculate_vertex_data_total_bytes () {
+      u32 result = 0;
+      for ( u32 i = 0; i < mesh_count; i++ ) {
+        u32 this_byte_length = mesh_data_array[ i ].get_byte_length( "vertex" );
+        result += this_byte_length;
+      }
+      vertex_data_total_bytes = result;
+    }
+    void calculate_index_data_total_bytes () {
+      u32 result = 0;
+      for ( u32 i = 0; i < mesh_count; i++ ) {
+        u32 this_byte_length = mesh_data_array[ i ].get_byte_length( "index" );
+        result += this_byte_length;
+      }
+      index_data_total_bytes = result;
+    }
+    
+    u32 get_data_total_bytes ( const char* type ) {
+      
+      u32 result = 0;
+      if ( strings_are_equal ( "vertex", type ) ) {
+        result = vertex_data_total_bytes;
+      } else if ( strings_are_equal ( "index", type ) ) {
+        result = index_data_total_bytes;
+      }
+      return result;
+    }
+    
 };
 
 bool check_is_glb_file ( ReadFileResult* file ) {
@@ -148,8 +191,31 @@ void init_program() {
           
           glb_imported_object.set_mesh_count();
           glb_imported_object.populate_mesh_data();
+          glb_imported_object.calculate_vertex_data_total_bytes();
+          glb_imported_object.calculate_index_data_total_bytes();
           
           SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "json is %s\n", json );
+          
+          GLuint  vbo;
+          GLuint  ibo;
+          
+          u32  vertex_buffer_size = glb_imported_object.get_data_total_bytes( "vertex" );
+          u32  index_buffer_size  = glb_imported_object.get_data_total_bytes( "index" );
+          
+          SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "vertex_buffer_size = %d\n", vertex_buffer_size );
+          SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "index_buffer_size = %d\n", index_buffer_size );
+          
+          // set up gl buffers
+          GLCall( glGenBuffers( 1, &vbo ) );
+          GLCall( glBindBuffer( GL_ARRAY_BUFFER, vbo ) );
+          GLCall( glBufferData( GL_ARRAY_BUFFER, ( GLsizeiptr ) vertex_buffer_size, 0, GL_STATIC_DRAW ) );
+          GLCall( glGenBuffers( 1, &ibo ) );
+          GLCall( glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ibo ) );
+          GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, ( GLsizeiptr ) index_buffer_size, 0, GL_STATIC_DRAW ) );
+          
+          const char*     shader_filename = "assets\shaderDebug.glsl";
+          ReadFileResult  shader_file  = read_entire_file( shader_filename );
+          u32             shader_program_id    = createShader( shader_file );
           
           SDL_free( dropped_filepath_orig );
           free( filepath );
