@@ -53,7 +53,7 @@ void check_for_fullscreen() {
 
 }
 
-void init_sdl( SDLParams* sdl_params ) {
+void init_sdl ( SDLParams* sdl_params ) {
 
   check_for_fullscreen();
 

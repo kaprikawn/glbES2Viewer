@@ -20,7 +20,9 @@ pushd %BUILD_DIR%
 
 call %VCVARS_DIR%\vcvarsall.bat x64
 
-cl -Zi /EHsc -wd4312 -DDEBUG=1 ..\src\main_windows.cpp user32.lib gdi32.lib Shlwapi.lib opengl32.lib /I%SDL_ROOT_DIR%\include /I%GLEW_ROOT_DIR%/include /link /LIBPATH:%SDL_ROOT_DIR%\lib\x64 /LIBPATH:%GLEW_ROOT_DIR%\lib\Release\x64 SDL2.lib SDL2main.lib glew32.lib /OUT:glbES2Viewer.exe
+@REM cl -Zi /EHsc -wd4312 -DDEBUG=1 ..\src\main_windows.cpp user32.lib gdi32.lib Shlwapi.lib opengl32.lib /I%SDL_ROOT_DIR%\include /I%GLEW_ROOT_DIR%/include /link /LIBPATH:%SDL_ROOT_DIR%\lib\x64 /LIBPATH:%GLEW_ROOT_DIR%\lib\Release\x64 SDL2.lib SDL2main.lib glew32.lib /OUT:glbES2Viewer.exe
+
+cl -Zi /EHsc -wd4312 -DDEBUG=1 ..\src\simple.cpp user32.lib gdi32.lib Shlwapi.lib opengl32.lib /I%SDL_ROOT_DIR%\include /I%GLEW_ROOT_DIR%/include /link /LIBPATH:%SDL_ROOT_DIR%\lib\x64 /LIBPATH:%GLEW_ROOT_DIR%\lib\Release\x64 SDL2.lib SDL2main.lib glew32.lib /OUT:glbES2Viewer.exe
 
 if not exist %BUILD_DIR%\SDL2.dll echo f | xcopy %SDL_ROOT_DIR%\lib\x64\SDL2.dll %BUILD_DIR%\SDL2.dll
 if not exist %BUILD_DIR%\glew32.dll echo f | xcopy %GLEW_ROOT_DIR%\bin\Release\x64\glew32.dll %BUILD_DIR%\glew32.dll

@@ -6,6 +6,8 @@
 #include "strings.hpp"
 #include "json.hpp"
 #include "shaders.hpp"
+#include "../ext/glm/glm/glm.hpp"
+#include "../ext/glm/glm/gtc/matrix_transform.hpp"
 
 class Mesh_Data {
   private : 
@@ -142,6 +144,15 @@ bool check_is_glb_file ( ReadFileResult* file ) {
 
 void init_program() {
   
+  glm::mat4 projection;
+  glm::mat4 view;
+  glm::mat4 model;
+  glm::mat4 mvp;
+  GLint     position_attribute_location;
+  GLint     mvp_uniform_location;
+
+  
+  
   SDLParams sdl_params;
   
   init_sdl( &sdl_params );
@@ -213,11 +224,33 @@ void init_program() {
           GLCall( glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ibo ) );
           GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, ( GLsizeiptr ) index_buffer_size, 0, GL_STATIC_DRAW ) );
           
-          const char*     shader_filename = "assets\shaderDebug.glsl";
-          ReadFileResult  shader_file  = read_entire_file( shader_filename );
-          u32             shader_program_id    = createShader( shader_file );
+          char*           shader_filename       = assets_dir_and_filename( "shaderDebug.glsl" );
+          ReadFileResult  shader_file           = read_entire_file( shader_filename );
+          u32             shader_program_id     = createShader( shader_file );
+          
+          glUseProgram( shader_program_id );
+          
+          position_attribute_location = glGetAttribLocation ( shader_program_id, "aPosition" );
+          mvp_uniform_location        = glGetUniformLocation( shader_program_id, "uMVP" );
+          
+          GLCall( glEnableVertexAttribArray( position_attribute_location ) );
+          
+          f32 aspectRatio = ( f32 ) sdl_params.windowWidth / ( f32 ) sdl_params.windowHeight;
+          
+          projection = glm::perspective( glm::radians( 45.0f ), aspectRatio, 0.1f, 100.0f );
+          view = glm::lookAt(
+              glm::vec3( 4, 3, 3 )
+            , glm::vec3( 0, 0, 0 )
+            , glm::vec3( 0, 1, 0 )
+          );
+          
+          model = glm::mat4( 1.0f );
+          
+          mvp = projection * view * model;
+          
           
           SDL_free( dropped_filepath_orig );
+          free ( shader_filename );
           free( filepath );
           
         } break;
@@ -227,8 +260,23 @@ void init_program() {
       }
     }
     
-    sdl_flip_frame( sdl_params.window );
     
+    // sdl_flip_frame( sdl_params.window );
+    
+    // set the viewport
+    // glViewport( 0, 0, sdl_params.windowWidth, sdl_params.windowHeight );
+    
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    
+    // Send our transformation to the currently bound shader, 
+    // in the "MVP" uniform
+    glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[0][0] );
+    
+    // load the vertex data
+    glVertexAttribPointer( position_attribute_location, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0 );
+    glEnableVertexAttribArray( position_attribute_location );
+    
+    SDL_GL_SwapWindow( sdl_params.window );
     
   } while( running );
   
