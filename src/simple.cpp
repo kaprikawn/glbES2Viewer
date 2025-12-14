@@ -39,15 +39,16 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
   }
   
   const char *shader_vert_src = 
-  "uniform    float u_time;\n"
+  // "uniform    float u_time;\n"
   "uniform    mat4  uMVP;;\n"
-  "attribute  vec2  aPosition;\n"
+  "attribute  vec3  aPosition;\n"
   "varying vec3 v_color;\n"
   "void main() {\n"
-  "	v_color = vec3(1.0 - 0.5*(aPosition.x+aPosition.y),aPosition);\n"
-  "	float c = cos(u_time), s = sin(u_time);"
-  "	vec2 t = mat2(c, s, -s, c)*(aPosition-vec2(0.33));\n"
-  "	gl_Position = vec4(t.x*3.0/5.0, t.y, 0.0, 1.0);\n"
+  // "	v_color = vec3(1.0 - 0.5*(aPosition.x+aPosition.y),aPosition);\n"
+  // "	float c = cos(u_time), s = sin(u_time);"
+  // "	vec2 t = mat2(c, s, -s, c)*(aPosition-vec2(0.33));\n"
+  // "	gl_Position = vec4(t.x*3.0/5.0, t.y, 0.0, 1.0);\n"
+  "	gl_Position = uMVP * vec4( aPosition, 1.0 );\n"
   // "	gl_Position = vec4(1.0, 1.0, 0.0, 1.0);\n"
   "}\n";
   const char *shader_frag_src =
@@ -75,8 +76,8 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
   glAttachShader(shader_program_id, shader_frag);
 	glLinkProgram(shader_program_id);
 	glUseProgram(shader_program_id);
-	GLuint u_time_loc = glGetUniformLocation(shader_program_id, "u_time");
-	float u_time = 0.0f;
+	// GLuint u_time_loc = glGetUniformLocation(shader_program_id, "u_time");
+	// float u_time = 0.0f;
   
   GLuint mvp_uniform_location = glGetUniformLocation( shader_program_id, "uMVP" );
   f32 aspect_ratio = ( f32 ) window_width / ( f32 ) window_height;
@@ -92,32 +93,47 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
   
   glm::mat4 mvp = projection * view * model;
   
+  glViewport( 0, 0, ( f32 ) window_width, ( f32 ) window_height );
+  
 	// create vbo
 	GLuint vbo;
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	GLfloat vertex_data[] = {
-    -0.5f, -0.5f, -0.5f, // 0
-    0.5f, -0.5f, -0.5f, // 1
-    0.5f,  0.5f, -0.5f, // 2
-    -0.5f,  0.5f, -0.5f, // 3
-    -0.5f, -0.5f,  0.5f, // 4
-    0.5f, -0.5f,  0.5f, // 5
-    0.5f,  0.5f,  0.5f, // 6
-    -0.5f,  0.5f,  0.5f  // 7
-  };
+      -1.0f,  1.0f,  1.0f // front top left
+    , -1.0f, -1.0f,  1.0f // front bottom left
+    ,  1.0f,  1.0f,  1.0f // front top right
+    ,  1.0f, -1.0f,  1.0f // front bottom right
+    
+    ,  1.0f,  1.0f, -1.0f // back top right
+    ,  1.0f, -1.0f, -1.0f // back bottom right
+    , -1.0f,  1.0f, -1.0f // back top left
+    , -1.0f, -1.0f, -1.0f // back bottom left
+	};
 	glBufferData( GL_ARRAY_BUFFER, sizeof ( vertex_data ), vertex_data, GL_STATIC_DRAW );
   
   GLuint  ibo;
   glGenBuffers ( 1, &ibo );
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-  GLuint index_data[] = { 0, 1, 2, 2, 3, 0, 2, 6, 7, 2, 3, 7, 0, 4, 5, 0, 1, 5, 0, 2, 6, 0, 4, 6, 1, 3, 7, 1, 5, 7, 0, 2, 3, 0, 1, 3, 4, 6, 7, 4, 5, 7 }; 
+  GLuint index_data[] = { 0, 1, 2 // front A
+    , 2, 1, 3 // front B
+    , 4, 2, 3 // right A
+    , 4, 3, 5 // right B
+    , 4, 5, 6 // back A
+    , 6, 5, 7 // back B
+    , 7, 0, 6 // left A
+    , 0, 7, 1 // left B
+    , 5, 3, 7 // bottom A
+    , 7, 3, 0 // bottom B
+    , 2, 4, 0 // top A
+    , 0, 4, 6 // top B
+  }; 
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_data), index_data, GL_STATIC_DRAW);
   
 	// setup vertex attribs
 	GLuint position_attribute_location = 0;
 	glEnableVertexAttribArray(position_attribute_location);
-	glVertexAttribPointer(position_attribute_location, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+	glVertexAttribPointer(position_attribute_location, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
   
 	glClearColor( 0.4, 0.6, 0.8, 1.0 );
 	bool running = true;
@@ -129,8 +145,10 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
 		}
     
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glUniform1f(u_time_loc, u_time += 1.0f/60.0f);
-		glDrawArrays(GL_TRIANGLES, 0, 24);
+		// glUniform1f(u_time_loc, u_time += 1.0f/60.0f);
+    glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[0][0] );
+		// glDrawArrays(GL_TRIANGLES, 0, 24);
+    glDrawElements( GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0 );
 		SDL_GL_SwapWindow(sdl_window);
 	} while (running);
   
