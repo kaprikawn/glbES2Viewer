@@ -77,7 +77,15 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
 	GLuint vbo;
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	float vertex_data[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f};
+	float vertex_data[] = {-0.5f, -0.5f, -0.5f, // 0
+     0.5f, -0.5f, -0.5f, // 1
+     0.5f,  0.5f, -0.5f, // 2
+    -0.5f,  0.5f, -0.5f, // 3
+    -0.5f, -0.5f,  0.5f, // 4
+     0.5f, -0.5f,  0.5f, // 5
+     0.5f,  0.5f,  0.5f, // 6
+    -0.5f,  0.5f,  0.5f  // 7
+  };
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
   
 	// setup vertex attribs
@@ -96,7 +104,7 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
     
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUniform1f(u_time_loc, u_time += 1.0f/60.0f);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawArrays(GL_TRIANGLES, 0, 24);
 		SDL_GL_SwapWindow(sdl_window);
 	} while (running);
   
