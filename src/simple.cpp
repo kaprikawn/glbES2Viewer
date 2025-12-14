@@ -37,21 +37,20 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
   
   const char *shader_vert_src = 
   "uniform float u_time;\n"
-  "attribute vec2 va_position;\n"
+  "attribute vec2 aPosition;\n"
   "varying vec3 v_color;\n"
   "void main() {\n"
-  "	v_color = vec3(1.0 - 0.5*(va_position.x+va_position.y),va_position);\n"
+  "	v_color = vec3(1.0 - 0.5*(aPosition.x+aPosition.y),aPosition);\n"
   "	float c = cos(u_time), s = sin(u_time);"
-  "	vec2 t = mat2(c, s, -s, c)*(va_position-vec2(0.33));\n"
+  "	vec2 t = mat2(c, s, -s, c)*(aPosition-vec2(0.33));\n"
   "	gl_Position = vec4(t.x*3.0/5.0, t.y, 0.0, 1.0);\n"
   "}\n";
   const char *shader_frag_src =
   "#ifdef GL_ES\n"
   "precision mediump float;\n"
   "#endif\n"
-  "varying vec3 v_color;\n"
   "void main() {\n"
-  "	gl_FragColor = vec4(v_color, 1.0);\n"
+  "	gl_FragColor = vec4( 1.0, 0.0, 0.0, 1.0 );\n"
   "}\n";
   GLint is_compiled;
   GLuint program, shader_vert, shader_frag;
@@ -82,9 +81,9 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
   
 	// setup vertex attribs
-	GLuint va_position = 0;
-	glEnableVertexAttribArray(va_position);
-	glVertexAttribPointer(va_position, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+	GLuint aPosition = 0;
+	glEnableVertexAttribArray(aPosition);
+	glVertexAttribPointer(aPosition, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
   
 	glClearColor(0.4, 0.6, 0.8, 1.0);
 	bool running = true;
