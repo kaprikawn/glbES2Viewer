@@ -54,24 +54,24 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
   "	gl_FragColor = vec4( 1.0, 0.0, 0.0, 1.0 );\n"
   "}\n";
   GLint is_compiled;
-  GLuint program, shader_vert, shader_frag;
+  GLuint shader_program_id, shader_vert, shader_frag;
   GLenum err = glewInit();
-  program = glCreateProgram();
+  shader_program_id = glCreateProgram();
   shader_vert = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(shader_vert, 1, &shader_vert_src, NULL);
   glCompileShader(shader_vert);
   glGetShaderiv(shader_vert, GL_COMPILE_STATUS, &is_compiled);
   printf("vert shader compiled %d\n", is_compiled);
-  glAttachShader(program, shader_vert);
+  glAttachShader(shader_program_id, shader_vert);
   shader_frag = glCreateShader(GL_FRAGMENT_SHADER);
   glShaderSource(shader_frag, 1, &shader_frag_src, NULL);
   glCompileShader(shader_frag);
   glGetShaderiv(shader_frag, GL_COMPILE_STATUS, &is_compiled);
   printf("frag shader compiled %d\n", is_compiled);
-  glAttachShader(program, shader_frag);
-	glLinkProgram(program);
-	glUseProgram(program);
-	GLuint u_time_loc = glGetUniformLocation(program, "u_time");
+  glAttachShader(shader_program_id, shader_frag);
+	glLinkProgram(shader_program_id);
+	glUseProgram(shader_program_id);
+	GLuint u_time_loc = glGetUniformLocation(shader_program_id, "u_time");
 	float u_time = 0.0f;
   
 	// create vbo
@@ -96,9 +96,12 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_data), index_data, GL_STATIC_DRAW);
   
 	// setup vertex attribs
-	GLuint aPosition = 0;
-	glEnableVertexAttribArray(aPosition);
-	glVertexAttribPointer(aPosition, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+	GLuint position_attribute_location = 0;
+	glEnableVertexAttribArray(position_attribute_location);
+	glVertexAttribPointer(position_attribute_location, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+  
+  GLuint mvp_uniform_location = glGetUniformLocation( shader_program_id, "uMVP" );
+
   
 	glClearColor(0.4, 0.6, 0.8, 1.0);
 	bool running = true;
@@ -118,7 +121,7 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
 	glUseProgram(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
   
-	glDeleteProgram(program);
+	glDeleteProgram(shader_program_id);
 	glDeleteBuffers(1, &vbo);
   
   SDL_GL_DeleteContext(sdl_gl_context);
