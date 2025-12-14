@@ -1,6 +1,9 @@
 #include <windows.h>
 #include <iostream>
 #include "sdl.hpp"
+#include "types.hpp"
+#include "../ext/glm/glm.hpp"
+#include "../ext/glm/gtc/matrix_transform.hpp"
 
 int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode ) {
   
@@ -18,12 +21,12 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES );
   
-  int video_width = 800;
-	int video_height = 480;
+  int window_width = 800;
+	int window_height = 480;
 	int window_flags = SDL_WINDOW_OPENGL;
 	sdl_window = SDL_CreateWindow("Test",
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-		video_width, video_height, window_flags);
+		window_width, window_height, window_flags);
     if (!sdl_window) {
       fprintf(stderr, "Failed to create OpenGL window: %s\n", SDL_GetError());
       exit(1);
@@ -36,8 +39,9 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
   }
   
   const char *shader_vert_src = 
-  "uniform float u_time;\n"
-  "attribute vec2 aPosition;\n"
+  "uniform    float u_time;\n"
+  "uniform    mat4  uMVP;;\n"
+  "attribute  vec2  aPosition;\n"
   "varying vec3 v_color;\n"
   "void main() {\n"
   "	v_color = vec3(1.0 - 0.5*(aPosition.x+aPosition.y),aPosition);\n"
@@ -74,11 +78,26 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
 	GLuint u_time_loc = glGetUniformLocation(shader_program_id, "u_time");
 	float u_time = 0.0f;
   
+  GLuint mvp_uniform_location = glGetUniformLocation( shader_program_id, "uMVP" );
+  f32 aspect_ratio = ( f32 ) window_width / ( f32 ) window_height;
+  
+  glm::mat4 projection = glm::perspective( glm::radians( 45.0f ), aspect_ratio, 0.1f, 100.0f );
+  glm::mat4 view = glm::lookAt(
+      glm::vec3( 4, 3, 3 )
+    , glm::vec3( 0, 0, 0 )
+    , glm::vec3( 0, 1, 0 )
+  );
+  
+  glm::mat4 model = glm::mat4( 1.0f );
+  
+  glm::mat4 mvp = projection * view * model;
+  
 	// create vbo
 	GLuint vbo;
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	GLfloat vertex_data[] = {-0.5f, -0.5f, -0.5f, // 0
+	GLfloat vertex_data[] = {
+    -0.5f, -0.5f, -0.5f, // 0
     0.5f, -0.5f, -0.5f, // 1
     0.5f,  0.5f, -0.5f, // 2
     -0.5f,  0.5f, -0.5f, // 3
@@ -87,7 +106,7 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
     0.5f,  0.5f,  0.5f, // 6
     -0.5f,  0.5f,  0.5f  // 7
   };
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
+	glBufferData( GL_ARRAY_BUFFER, sizeof ( vertex_data ), vertex_data, GL_STATIC_DRAW );
   
   GLuint  ibo;
   glGenBuffers ( 1, &ibo );
@@ -100,10 +119,7 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
 	glEnableVertexAttribArray(position_attribute_location);
 	glVertexAttribPointer(position_attribute_location, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
   
-  GLuint mvp_uniform_location = glGetUniformLocation( shader_program_id, "uMVP" );
-
-  
-	glClearColor(0.4, 0.6, 0.8, 1.0);
+	glClearColor( 0.4, 0.6, 0.8, 1.0 );
 	bool running = true;
 	do {
 		SDL_Event event;
