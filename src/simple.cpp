@@ -44,6 +44,7 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
   "	float c = cos(u_time), s = sin(u_time);"
   "	vec2 t = mat2(c, s, -s, c)*(aPosition-vec2(0.33));\n"
   "	gl_Position = vec4(t.x*3.0/5.0, t.y, 0.0, 1.0);\n"
+  // "	gl_Position = vec4(1.0, 1.0, 0.0, 1.0);\n"
   "}\n";
   const char *shader_frag_src =
   "#ifdef GL_ES\n"
@@ -77,16 +78,22 @@ int CALLBACK WinMain( HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandL
 	GLuint vbo;
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	float vertex_data[] = {-0.5f, -0.5f, -0.5f, // 0
-     0.5f, -0.5f, -0.5f, // 1
-     0.5f,  0.5f, -0.5f, // 2
+	GLfloat vertex_data[] = {-0.5f, -0.5f, -0.5f, // 0
+    0.5f, -0.5f, -0.5f, // 1
+    0.5f,  0.5f, -0.5f, // 2
     -0.5f,  0.5f, -0.5f, // 3
     -0.5f, -0.5f,  0.5f, // 4
-     0.5f, -0.5f,  0.5f, // 5
-     0.5f,  0.5f,  0.5f, // 6
+    0.5f, -0.5f,  0.5f, // 5
+    0.5f,  0.5f,  0.5f, // 6
     -0.5f,  0.5f,  0.5f  // 7
   };
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
+  
+  GLuint  ibo;
+  glGenBuffers ( 1, &ibo );
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+  GLuint index_data[] = { 0, 1, 2, 2, 3, 0, 2, 6, 7, 2, 3, 7, 0, 4, 5, 0, 1, 5, 0, 2, 6, 0, 4, 6, 1, 3, 7, 1, 5, 7, 0, 2, 3, 0, 1, 3, 4, 6, 7, 4, 5, 7 }; 
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_data), index_data, GL_STATIC_DRAW);
   
 	// setup vertex attribs
 	GLuint aPosition = 0;
