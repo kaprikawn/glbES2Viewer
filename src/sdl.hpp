@@ -53,7 +53,7 @@ void check_for_fullscreen() {
 
 }
 
-void init_sdl( SDLParams* sdl_params ) {
+void init_sdl ( SDLParams* sdl_params ) {
 
   check_for_fullscreen();
 
@@ -64,9 +64,9 @@ void init_sdl( SDLParams* sdl_params ) {
   u32 sdlFlags      = SDL_WINDOW_OPENGL;
   
   SDL_Init( SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER );
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES );
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES );
   
   if( launch_fullscreen ) {
     sdlFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN;
@@ -123,10 +123,5 @@ void init_sdl( SDLParams* sdl_params ) {
   sdl_params -> windowHeight  = windowHeight;
   
 };
-
-void sdl_flip_frame( SDL_Window* window ) {
-  glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-  SDL_GL_SwapWindow( window );
-}
 
 #endif //SDL_HPP

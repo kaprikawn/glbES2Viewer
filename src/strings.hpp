@@ -73,6 +73,21 @@ inline char* concat( const char* str1, const char* str2 ) {
   return result;
 }
 
+inline char* assets_dir_and_filename ( const char* filename ) {
+  
+  u32 len           = string_length ( filename );
+  u32 totalLength  = len + 11; //  ../assets/  and the null terminator
+  
+  char* result = init_char_star( totalLength );
+  
+#ifdef _WIN32
+  result = concat ( "..\\assets\\", filename );
+  #elif __linux__
+  result = concat ( "../assets/", filename );
+#endif
+  return result;
+}
+
 inline u32 safeTruncateUInt64( u64 value ) {
   u32 result = ( u32 )value;
   return result;
@@ -109,7 +124,6 @@ inline u32 get_filesize( const char* filepath ) {
   result = safeTruncateUInt64( filesize.QuadPart );
   return result;
 }
-
 
 inline ReadFileResult read_entire_file( const char* filepath ) {
   
