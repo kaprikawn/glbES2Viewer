@@ -125,7 +125,6 @@ inline u32 get_filesize( const char* filepath ) {
   return result;
 }
 
-
 inline ReadFileResult read_entire_file( const char* filepath ) {
   
   ReadFileResult result = {};

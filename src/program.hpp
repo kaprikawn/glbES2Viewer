@@ -33,13 +33,23 @@ class Mesh_Data {
     
     u32 get_byte_length ( const char* type ) {
       u32 result = 0;
-      if ( strings_are_equal( "vertex", type ) ) {
+      if ( strings_are_equal( "VERTEX", type ) ) {
         result = vertex_buffer_view_data.byte_length;
-      } else if ( strings_are_equal( "index", type ) ) {
+      } else if ( strings_are_equal( "INDEX", type ) ) {
         result = index_buffer_view_data.byte_length;
       }
       return result;
     }
+    
+    u32 get_count ( const char* type ) {
+      u32 result = 0;
+      if ( strings_are_equal ( type, "VERTEX" ) ) {
+        result = vertex_accessor_data.count;
+      } else if ( strings_are_equal ( type, "INDEX" ) ) {
+        result = index_accessor_data.count;
+      }
+      return result;
+    } 
     
     void set_buffer_view_data ( const char* json_string, u32 json_char_count ) {
       
@@ -68,15 +78,6 @@ class Mesh_Data {
       return result;
     }
     
-    u32 get_byte_length ( const char* type ) {
-      u32 result = 0;
-      if ( strings_are_equal( type, "VERTEX" ) ) {
-        result = vertex_buffer_view_data.byte_length;
-      } else if ( strings_are_equal( type, "INDEX" ) ) {
-        result = index_buffer_view_data.byte_length;
-      }
-      return result;
-    }
 };
 
 enum GL_COMPONENT_TYPE {
@@ -90,25 +91,59 @@ enum GL_COMPONENT_TYPE {
 
 class Glb_imported_object {
   private :
-    char*       json;
-    void*       file_contents;
-    u32         json_bytes;
-    u32         mesh_count;
-    Mesh_Data*  mesh_data_array;
+    char*           filepath = NULL;
+    u32             filesize;
+    ReadFileResult  glb_file;
+    GltfHeader*     gltf_header; // no need to free, points to another pointer
+    char*           json = NULL;
+    u32             json_bytes;
+    u32             mesh_count;
+    Mesh_Data*      mesh_data_array;
+    u32             vertex_data_total_bytes = 0;
+    u32             index_data_total_bytes  = 0;
+    u32             bin_start_offset = 0;
     
-    u32         vertex_data_total_bytes = 0;
-    u32         index_data_total_bytes  = 0;
+    f32*            gl_vertex_data = NULL; // raw stream of vertices for upload to gl buffer
+    s16*            gl_index_data = NULL;
+    
+    bool            has_any_errors = false;
     
   public :
-    void update_json( ReadFileResult* glb_file ) {
-      u32 this_json_bytes = json_size_in_bytes( glb_file );
-      json = init_char_star( this_json_bytes + 1 );
-      pull_out_json_string( glb_file, json, this_json_bytes );
-      json_bytes = this_json_bytes;
+    
+    // constructor
+    Glb_imported_object ( const char* filepath_in, u32 filepath_length_in = 0 ) {
+      
+      u32 filepath_length = filepath_length_in;
+      
+      if ( filepath_length_in <= 0 ) {
+        filepath_length = string_length( filepath_in );
+      }
+      
+      filepath = init_char_star ( filepath_length + 1 );
+      
+      copy_string_into_char_star ( filepath_in, filepath, filepath_length );
+      
+      // @TODO : check if file exists
+      
     }
     
-    void set_file_contents( void* file_contents_in ) {
-      file_contents = file_contents_in;
+    void read_file_offsets () {
+      
+      gltf_header = ( GltfHeader* ) glb_file.contents;
+      
+      u32 gltf_header_size_in_bytes = 12; // magic + version + length
+      u32 json_header_in_bytes      = 8; // 4 bytes for chunk length, 4 bytes for chunk type
+      u32 json_string_in_bytes      = gltf_header -> json_chunk_length;
+      u32 bin_header_in_bytes       = 8; // 4 bytes for chunk length, 4 bytes for chunk type
+      bin_start_offset              = gltf_header_size_in_bytes + json_header_in_bytes + json_string_in_bytes + bin_header_in_bytes;
+      
+    }
+    
+    void update_json() {
+      u32 this_json_bytes = json_size_in_bytes( &glb_file );
+      json = init_char_star( this_json_bytes + 1 );
+      pull_out_json_string( &glb_file, json, this_json_bytes );
+      json_bytes = this_json_bytes;
     }
     
     void set_mesh_count () {
@@ -131,59 +166,111 @@ class Glb_imported_object {
       }
     }
     
-    void calculate_vertex_data_total_bytes () {
+    void calculate_data_total_bytes ( const char* type ) {
       u32 result = 0;
       for ( u32 i = 0; i < mesh_count; i++ ) {
-        u32 this_byte_length = mesh_data_array[ i ].get_byte_length( "vertex" );
+        u32 this_byte_length = 0;
+        if ( strings_are_equal ( type, "VERTEX" ) ) {
+          this_byte_length = mesh_data_array[ i ].get_byte_length( "VERTEX" );
+        } else if ( strings_are_equal ( type, "INDEX" ) ) {
+          this_byte_length = mesh_data_array[ i ].get_byte_length( "INDEX" );
+        }
+        
         result += this_byte_length;
+        if ( strings_are_equal ( type, "VERTEX" ) ) {
+          vertex_data_total_bytes = result;
+          gl_vertex_data = ( f32* ) malloc ( ( size_t ) vertex_data_total_bytes ); // allocate the amount of data needed to hold vertices
+        } else if ( strings_are_equal ( type, "INDEX" ) ) {
+          index_data_total_bytes = result;
+          gl_index_data = ( s16* ) malloc ( ( size_t ) index_data_total_bytes );
+        }
       }
-      vertex_data_total_bytes = result;
-    }
-    void calculate_index_data_total_bytes () {
-      u32 result = 0;
-      for ( u32 i = 0; i < mesh_count; i++ ) {
-        u32 this_byte_length = mesh_data_array[ i ].get_byte_length( "index" );
-        result += this_byte_length;
-      }
-      index_data_total_bytes = result;
     }
     
     u32 get_data_total_bytes ( const char* type ) {
       
       u32 result = 0;
-      if ( strings_are_equal ( "vertex", type ) ) {
+      if ( strings_are_equal ( "VERTEX", type ) ) {
         result = vertex_data_total_bytes;
-      } else if ( strings_are_equal ( "index", type ) ) {
+      } else if ( strings_are_equal ( "INDEX", type ) ) {
         result = index_data_total_bytes;
       }
       return result;
     }
     
-    void get_vertex_data_for_gl() {
+    void import_data_for_gl ( const char* type ) {
       // just a stream of floats for upload to gl
-      u32 current_offset = 0;
-      for ( u32 i = 0; i < mesh_count; i++ ) {
-        u32 offset      = mesh_data_array[ i ].get_binary_offset( "VERTEX" );
-        u32 byte_length = mesh_data_array[ i ].get_byte_length( "VERTEX" );
-        u32 dfasfdas = 7;
-        
+      f32*  dst_f32;
+      s16*  dst_s16 = gl_index_data;
+      
+      if ( strings_are_equal ( type, "VERTEX" ) ) {
+        dst_f32 = ( f32* ) gl_vertex_data;
       }
       
+      void* dst;
+      
+      for ( u32 i = 0; i < mesh_count; i++ ) {
+        u32 offset      = mesh_data_array[ i ].get_binary_offset( type );
+        u32 byte_length = mesh_data_array[ i ].get_byte_length( type );
+        u32 count       = mesh_data_array[ i ].get_count( type );
+        
+        if ( strings_are_equal ( type, "VERTEX" ) ) {
+          f32* src = ( f32* )( ( char* ) glb_file.contents + bin_start_offset + offset );
+          dst = ( void* ) dst_f32;
+          memcpy ( dst_f32, src, byte_length );
+          dst_f32 += count;
+        } else if ( strings_are_equal ( type, "INDEX" ) ) {
+          s16* src = ( s16* )( ( char* ) glb_file.contents + bin_start_offset + offset );
+          dst = ( void* ) dst_s16;
+          memcpy ( dst_s16, src, byte_length );
+          dst_s16 += count;
+        }
+        // u32 dfasfdas = 7;
+      }
     }
     
+    bool is_glb_file () {
+      bool result = false;
+      
+      if ( gltf_header -> magic == 1179937895 ) {
+        result = true;
+      }
+      // @TODO : add error message
+      return result;
+    }
+    
+    void import_glb_file() {
+      
+      glb_file = read_entire_file ( filepath );
+      read_file_offsets();
+      
+      if ( !is_glb_file() ) {
+        SDL_LogInfo( SDL_LOG_CATEGORY_ERROR, "ERROR not glb file\n" );
+      }
+      
+      update_json();
+      set_mesh_count();
+      populate_mesh_data();
+      calculate_data_total_bytes( "VERTEX" );
+      calculate_data_total_bytes( "INDEX" );
+      import_data_for_gl( "VERTEX" );
+      import_data_for_gl( "INDEX" );
+    }
+    
+    void* get_pointer_to_gl_buffer_data ( const char* type ) {
+      
+      void* result = NULL;
+      
+      if ( strings_are_equal ( type, "VERTEX" ) ) {
+        result = ( void* ) gl_vertex_data;
+      } else if ( strings_are_equal ( type, "INDEX" ) ) {
+        result = ( void* ) gl_index_data;
+      }
+      
+      return result;
+    }
 };
 
-bool check_is_glb_file ( ReadFileResult* file ) {
-  bool result = false;
-  
-  GltfHeader* gltf_header = ( GltfHeader* ) file -> contents;
-  
-  if ( gltf_header -> magic == 1179937895 ) {
-    result = true;
-  }
-  // @TODO : add error message
-  return result;
-}
 
 void init_program() {
   
@@ -223,35 +310,10 @@ void init_program() {
           char* filepath = init_char_star( filepath_length + 1 );
           copy_string_into_char_star( dropped_filepath_orig, filepath, filepath_length );
           
-          // SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "filepath_length is %d\n", filepath_length );
-          SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "filepath is %s\n", filepath );
+          Glb_imported_object glb_imported_object ( filepath );
+          glb_imported_object.import_glb_file();
           
-          ReadFileResult glb_file = read_entire_file( filepath );
-          
-          if ( !check_is_glb_file( &glb_file ) ) {
-            SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "ERROR - Is not a glb file\n" );
-            break;
-          }
-          
-          u32 json_bytes = json_size_in_bytes( &glb_file );
-          
-          SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "json_bytes is %d\n", json_bytes );
-          
-          char* json = init_char_star( json_bytes + 1 );
-          pull_out_json_string( &glb_file, json, json_bytes );
-          
-          Glb_imported_object glb_imported_object;
-          glb_imported_object.update_json( &glb_file );
-          
-          glb_imported_object.set_mesh_count();
-          glb_imported_object.populate_mesh_data();
-          glb_imported_object.calculate_vertex_data_total_bytes();
-          glb_imported_object.calculate_index_data_total_bytes();
-          
-          glb_imported_object.set_file_contents( glb_file.contents );
-          glb_imported_object.get_vertex_data_for_gl();
-          
-          SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "json is %s\n", json );
+          int dfasfda = 4;
           
           GLuint  vbo;
           GLuint  ibo;
@@ -271,14 +333,14 @@ void init_program() {
           GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, ( GLsizeiptr ) index_buffer_size, 0, GL_STATIC_DRAW ) );
           
           // upload data to gl
+          GLfloat* vertex_data  = ( GLfloat* ) glb_imported_object.get_pointer_to_gl_buffer_data( "VERTEX" );
+          s16* index_data       = ( s16* )  glb_imported_object.get_pointer_to_gl_buffer_data( "INDEX" );
           
-          f32* vertex_data = ( f32* ) malloc ( ( size_t ) vertex_buffer_size );
-          u16* index_data  = ( u16* ) malloc ( ( size_t ) index_buffer_size );
+          int dasfdasfdaf = 17;
           
-          int dasf = 7;
+          GLCall( glBufferData( GL_ARRAY_BUFFER, vertex_buffer_size, vertex_data, GL_STATIC_DRAW ) );
+          GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, index_buffer_size, index_data, GL_STATIC_DRAW ) );
           
-          free ( vertex_data );
-          free ( index_data );
           ////////////////////
           
           char*           shader_filename       = assets_dir_and_filename( "shaderDebug.glsl" );
