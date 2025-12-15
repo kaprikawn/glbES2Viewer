@@ -94,6 +94,7 @@ struct BufferViewData {
   u32 buffer;
   u32 byte_length;
   u32 byte_offset;
+  u32 gl_buffer_byte_offset;
 };
 
 inline u32 json_size_in_bytes( ReadFileResult* gltf_file ) {

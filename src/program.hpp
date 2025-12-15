@@ -1,13 +1,14 @@
 #ifndef PROGRAM_HPP
 #define PROGRAM_HPP
 
+#include <cstdlib>
 #include "sdl.hpp"
 #include "types.hpp"
 #include "strings.hpp"
 #include "json.hpp"
 #include "shaders.hpp"
-#include "../ext/glm/glm/glm.hpp"
-#include "../ext/glm/glm/gtc/matrix_transform.hpp"
+#include "../ext/glm/glm.hpp"
+#include "../ext/glm/gtc/matrix_transform.hpp"
 
 class Mesh_Data {
   private : 
@@ -15,14 +16,14 @@ class Mesh_Data {
     GltfBufferViewInfo gltf_buffer_view_info;
     MeshPositionIndices mesh_position_indices;
     
-    AccessorData vertex_accessor_data;
-    AccessorData normal_accessor_data;
-    AccessorData index_accessor_data;
-    AccessorData tex_coord0_accessor_data;
-    BufferViewData vertex_buffer_view_data;
-    BufferViewData normal_buffer_view_data;
-    BufferViewData index_buffer_view_data;
-    BufferViewData tex_coord0_buffer_view_data;
+    AccessorData    vertex_accessor_data;
+    AccessorData    normal_accessor_data;
+    AccessorData    index_accessor_data;
+    AccessorData    tex_coord0_accessor_data;
+    BufferViewData  vertex_buffer_view_data;
+    BufferViewData  normal_buffer_view_data;
+    BufferViewData  index_buffer_view_data;
+    BufferViewData  tex_coord0_buffer_view_data;
     
   public : 
     
@@ -57,14 +58,40 @@ class Mesh_Data {
       int g = 4;
     }
     
+    u32 get_binary_offset( const char* type ) {
+      u32 result = 0;
+      if ( strings_are_equal( type, "VERTEX" ) ) {
+        result = vertex_buffer_view_data.byte_offset;
+      } else if ( strings_are_equal( type, "INDEX" ) ) {
+        result = index_buffer_view_data.byte_offset;
+      }
+      return result;
+    }
     
-    
-    
+    u32 get_byte_length ( const char* type ) {
+      u32 result = 0;
+      if ( strings_are_equal( type, "VERTEX" ) ) {
+        result = vertex_buffer_view_data.byte_length;
+      } else if ( strings_are_equal( type, "INDEX" ) ) {
+        result = index_buffer_view_data.byte_length;
+      }
+      return result;
+    }
+};
+
+enum GL_COMPONENT_TYPE {
+    GL_COMPONENT_TYPE_SIGNED_BYTE    = 5120 // 8 bits
+  , GL_COMPONENT_TYPE_UNSIGNED_BYTE  = 5121 // 8 bits
+  , GL_COMPONENT_TYPE_SIGNED_SHORT   = 5122 // 16 bits
+  , GL_COMPONENT_TYPE_UNSIGNED_SHORT = 5123 // 16 bits
+  , GL_COMPONENT_TYPE_UNSIGNED_INT   = 5125 // 32 bits
+  , GL_COMPONENT_TYPE_FLOAT          = 5126 // Signed 32 bits
 };
 
 class Glb_imported_object {
   private :
     char*       json;
+    void*       file_contents;
     u32         json_bytes;
     u32         mesh_count;
     Mesh_Data*  mesh_data_array;
@@ -78,6 +105,10 @@ class Glb_imported_object {
       json = init_char_star( this_json_bytes + 1 );
       pull_out_json_string( glb_file, json, this_json_bytes );
       json_bytes = this_json_bytes;
+    }
+    
+    void set_file_contents( void* file_contents_in ) {
+      file_contents = file_contents_in;
     }
     
     void set_mesh_count () {
@@ -126,6 +157,18 @@ class Glb_imported_object {
         result = index_data_total_bytes;
       }
       return result;
+    }
+    
+    void get_vertex_data_for_gl() {
+      // just a stream of floats for upload to gl
+      u32 current_offset = 0;
+      for ( u32 i = 0; i < mesh_count; i++ ) {
+        u32 offset      = mesh_data_array[ i ].get_binary_offset( "VERTEX" );
+        u32 byte_length = mesh_data_array[ i ].get_byte_length( "VERTEX" );
+        u32 dfasfdas = 7;
+        
+      }
+      
     }
     
 };
@@ -205,6 +248,9 @@ void init_program() {
           glb_imported_object.calculate_vertex_data_total_bytes();
           glb_imported_object.calculate_index_data_total_bytes();
           
+          glb_imported_object.set_file_contents( glb_file.contents );
+          glb_imported_object.get_vertex_data_for_gl();
+          
           SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "json is %s\n", json );
           
           GLuint  vbo;
@@ -224,6 +270,17 @@ void init_program() {
           GLCall( glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ibo ) );
           GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, ( GLsizeiptr ) index_buffer_size, 0, GL_STATIC_DRAW ) );
           
+          // upload data to gl
+          
+          f32* vertex_data = ( f32* ) malloc ( ( size_t ) vertex_buffer_size );
+          u16* index_data  = ( u16* ) malloc ( ( size_t ) index_buffer_size );
+          
+          int dasf = 7;
+          
+          free ( vertex_data );
+          free ( index_data );
+          ////////////////////
+          
           char*           shader_filename       = assets_dir_and_filename( "shaderDebug.glsl" );
           ReadFileResult  shader_file           = read_entire_file( shader_filename );
           u32             shader_program_id     = createShader( shader_file );
@@ -233,6 +290,8 @@ void init_program() {
           position_attribute_location = glGetAttribLocation ( shader_program_id, "aPosition" );
           mvp_uniform_location        = glGetUniformLocation( shader_program_id, "uMVP" );
           
+          // load the vertex data
+          GLCall( glVertexAttribPointer( position_attribute_location, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0 ) );
           GLCall( glEnableVertexAttribArray( position_attribute_location ) );
           
           f32 aspectRatio = ( f32 ) sdl_params.windowWidth / ( f32 ) sdl_params.windowHeight;
@@ -248,6 +307,8 @@ void init_program() {
           
           mvp = projection * view * model;
           
+          // set the viewport
+          glViewport( 0, 0, ( f32 ) sdl_params.windowWidth, ( f32 ) sdl_params.windowHeight );
           
           SDL_free( dropped_filepath_orig );
           free ( shader_filename );
@@ -263,17 +324,15 @@ void init_program() {
     
     // sdl_flip_frame( sdl_params.window );
     
-    // set the viewport
-    // glViewport( 0, 0, sdl_params.windowWidth, sdl_params.windowHeight );
-    
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     
     // Send our transformation to the currently bound shader, 
     // in the "MVP" uniform
     glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[0][0] );
     
-    // load the vertex data
-    glVertexAttribPointer( position_attribute_location, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0 );
+    
+    // glDrawElements( GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0 );
+    
     glEnableVertexAttribArray( position_attribute_location );
     
     SDL_GL_SwapWindow( sdl_params.window );

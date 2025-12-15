@@ -107,7 +107,6 @@ u32 createShader( ReadFileResult shader_file ) {
   glDeleteShader( vs );
   glDeleteShader( fs );
   
-
   free( vertex_shader_source );
   free( fragment_shader_source );
   
