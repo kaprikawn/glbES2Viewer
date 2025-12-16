@@ -41,8 +41,8 @@ bool32  launch_fullscreen = false;
 struct SDLParams {
   SDL_Window*   window;
   SDL_GLContext glContext;
-  int windowWidth;
-  int windowHeight;
+  int window_width;
+  int window_height;
 };
 
 void check_for_fullscreen() {
@@ -54,11 +54,11 @@ void check_for_fullscreen() {
 }
 
 void init_sdl ( SDLParams* sdl_params ) {
-
+  
   check_for_fullscreen();
-
-  int windowWidth   = 1280;
-  int windowHeight  = 720;
+  
+  int window_width   = 1280;
+  int window_height  = 720;
   int windowX       = 50;
   int windowY       = 50;
   u32 sdlFlags      = SDL_WINDOW_OPENGL;
@@ -76,8 +76,8 @@ void init_sdl ( SDLParams* sdl_params ) {
     SDL_Window* nullWindow = SDL_CreateWindow( "undef", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 0, 0, SDL_WINDOW_FULLSCREEN );
     SDL_DisplayMode dm;
     SDL_GetDesktopDisplayMode( 0, &dm );
-    windowWidth   = dm.w;
-    windowHeight  = dm.h;
+    window_width   = dm.w;
+    window_height  = dm.h;
     SDL_DestroyWindow( nullWindow );
     
     windowX       = SDL_WINDOWPOS_UNDEFINED;
@@ -86,7 +86,7 @@ void init_sdl ( SDLParams* sdl_params ) {
     SDL_ShowCursor( SDL_DISABLE );
   }
   
-  sdl_params -> window = SDL_CreateWindow( "GLB ES2 Viewer", windowX, windowY, windowWidth, windowHeight, sdlFlags );
+  sdl_params -> window = SDL_CreateWindow( "GLB ES2 Viewer", windowX, windowY, window_width, window_height, sdlFlags );
   if( !sdl_params -> window ) {
     SDL_LogError( SDL_LOG_CATEGORY_ERROR, "The window could not be created! SDL_Error : %s\n", SDL_GetError() );
   }
@@ -116,11 +116,11 @@ void init_sdl ( SDLParams* sdl_params ) {
   GLCall( glEnable( GL_DEPTH_TEST ) );
   GLCall( glEnable( GL_BLEND ) );
   GLCall( glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ) );
-  GLCall( glViewport( 0, 0, ( float ) windowWidth, ( float ) windowHeight ) );
+  GLCall( glViewport( 0, 0, ( float ) window_width, ( float ) window_height ) );
   GLCall( glClearColor( 0.0f, 0.65f, 1.0f, 1.0f ) );
   
-  sdl_params -> windowWidth   = windowWidth;
-  sdl_params -> windowHeight  = windowHeight;
+  sdl_params -> window_width   = window_width;
+  sdl_params -> window_height  = window_height;
   
 };
 

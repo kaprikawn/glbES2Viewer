@@ -28,6 +28,8 @@ void init_program() {
   bool32 running = true;
   
   GLsizei total_index_count;
+  u32     current_offset_in_gl_array_buffer         = 0;
+  u32     current_offset_in_gl_element_array_buffer = 0;
   
   do {
     
@@ -97,7 +99,7 @@ void init_program() {
           GLCall( glVertexAttribPointer( position_attribute_location, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0 ) );
           GLCall( glEnableVertexAttribArray( position_attribute_location ) );
           
-          f32 aspectRatio = ( f32 ) sdl_params.windowWidth / ( f32 ) sdl_params.windowHeight;
+          f32 aspectRatio = ( f32 ) sdl_params.window_width / ( f32 ) sdl_params.window_height;
           
           projection = glm::perspective( glm::radians( 45.0f ), aspectRatio, 0.1f, 100.0f );
           view = glm::lookAt(
@@ -111,7 +113,7 @@ void init_program() {
           mvp = projection * view * model;
           
           // set the viewport
-          glViewport( 0, 0, ( f32 ) sdl_params.windowWidth, ( f32 ) sdl_params.windowHeight );
+          glViewport( 0, 0, ( f32 ) sdl_params.window_width, ( f32 ) sdl_params.window_height );
           
           glb_loaded = true;
           

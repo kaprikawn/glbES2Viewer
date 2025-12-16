@@ -13,8 +13,8 @@
 class Mesh_Data {
   
   private : 
-    u32 mesh_index;
-    GltfBufferViewInfo gltf_buffer_view_info;
+    u32                 mesh_index;
+    GltfBufferViewInfo  gltf_buffer_view_info;
     MeshPositionIndices mesh_position_indices;
     
     AccessorData    vertex_accessor_data;
@@ -26,7 +26,37 @@ class Mesh_Data {
     BufferViewData  index_buffer_view_data;
     BufferViewData  tex_coord0_buffer_view_data;
     
+    u32             vertex_byte_length;
+    u32             vertex_count;
+    f32*            vertex_data;
+    u32             index_byte_length;
+    u32             index_count;
+    u16*            index_data;
+    
+    u32             vertex_offset_in_gl_buffer_in_bytes;
+    u32             index_offset_in_gl_buffer_in_bytes;
+    
   public : 
+    
+    u32 upload_vertex_data_to_gl ( u32 offset_in_gl_buffer ) {
+      
+      u32 result = 0; // return the amount of data uploaded so caller knows how much to add to the offset
+      
+      vertex_offset_in_gl_buffer_in_bytes = offset_in_gl_buffer;
+      
+      u32 byte_length = vertex_buffer_view_data.byte_length;
+      result = byte_length;
+      
+      
+      return result;
+    }
+    
+    void populate_mesh_data ( ReadFileResult* glb_file  ) {
+      
+      
+      
+    }
+    
     
     void set_mesh_index ( u32 mesh_index_value ) {
       mesh_index = mesh_index_value;
@@ -96,6 +126,7 @@ class Glb_imported_object {
     u32             filesize;
     ReadFileResult  glb_file;
     GltfHeader*     gltf_header; // no need to free, points to another pointer
+    char*           glb_file_binary_data_pointer; // no need to free, points to another pointer
     char*           json = NULL;
     u32             json_bytes;
     u32             mesh_count;
@@ -138,6 +169,10 @@ class Glb_imported_object {
       u32 json_string_in_bytes      = gltf_header -> json_chunk_length;
       u32 bin_header_in_bytes       = 8; // 4 bytes for chunk length, 4 bytes for chunk type
       bin_start_offset              = gltf_header_size_in_bytes + json_header_in_bytes + json_string_in_bytes + bin_header_in_bytes;
+      
+      glb_file_binary_data_pointer  = 
+      
+      f32* src = ( f32* )( ( char* ) glb_file.contents + bin_start_offset + offset );
       
     }
     
@@ -262,8 +297,8 @@ class Glb_imported_object {
       populate_mesh_data();
       calculate_data_total_bytes( "VERTEX" );
       calculate_data_total_bytes( "INDEX" );
-      import_data_for_gl( "VERTEX" );
-      import_data_for_gl( "INDEX" );
+      // import_data_for_gl( "VERTEX" );
+      // import_data_for_gl( "INDEX" );
     }
     
     void* get_pointer_to_gl_buffer_data ( const char* type ) {
