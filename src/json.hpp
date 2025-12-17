@@ -964,7 +964,7 @@ MeshData populate_mesh_data( u32 target_mesh_index, const char* json_string, Rea
   AccessorData normal_accessor_data     = get_accessor_data( mesh_position_indices.normals, json_string, json_char_count );
   AccessorData index_accessor_data      = get_accessor_data( mesh_position_indices.indices, json_string, json_char_count );
   AccessorData tex_coord0_accessor_data = get_accessor_data( mesh_position_indices.texcoord_0, json_string, json_char_count );
-  AccessorData color0_accessor_data = get_accessor_data( mesh_position_indices.color_0, json_string, json_char_count );
+  AccessorData color0_accessor_data     = get_accessor_data( mesh_position_indices.color_0, json_string, json_char_count );
   
   BufferViewData vertex_buffer_view_data      = get_buffer_view_data( vertex_accessor_data.buffer_view, json_string, json_char_count );
   BufferViewData normal_buffer_view_data      = get_buffer_view_data( normal_accessor_data.buffer_view, json_string, json_char_count );

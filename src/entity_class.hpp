@@ -8,12 +8,24 @@ struct Mesh {
   u32             vertex_byte_length;
   u32             vertex_count;
   f32*            vertex_data;
+  u32             color_byte_length = 0;
+  u32             color_count = 0;
+  f32*            color_data = NULL;
   u32             index_byte_length;
   u32             index_count;
   u16*            index_data;
   u32             vertex_offset_in_gl_buffer_in_bytes;
   u32             index_offset_in_gl_buffer_in_bytes;
 };
+
+f32 normalize_color ( u8 value ) {
+  if ( value == 255 ) {
+    return 1.0f;
+  } else if ( value == 0 ) {
+    return 0.0f;
+  }
+  return value * (1.0f / 255.0f); 
+}
 
 class Entity_Class {
   private :
@@ -49,6 +61,12 @@ class Entity_Class {
         f32* dst_f32 = mesh_array[ i ].vertex_data;
         
         f32* glb_vertex_data = glb_imported_object.get_float_data_pointer( i, "VERTEX" );
+        u8*  glb_color0_data = NULL;
+        
+        bool vertices_have_colours = glb_imported_object.glb_has_colours();
+        if ( vertices_have_colours ) {
+          glb_color0_data = glb_imported_object.get_color0_data_pointer( i );
+        }
         
         u32 current_count_loaded = 0;
         
@@ -62,10 +80,24 @@ class Entity_Class {
           *dst_f32++ = 0.0f; // normal z
           *dst_f32++ = 0.0f; // u
           *dst_f32++ = 0.0f; // v
-          *dst_f32++ = 1.0f; // r
-          *dst_f32++ = 1.0f; // g
-          *dst_f32++ = 1.0f; // b
-          *dst_f32++ = 1.0f; // a
+          
+          if ( vertices_have_colours ) {
+            u8 this_color;
+            this_color = *glb_color0_data++;
+            *dst_f32++ = normalize_color( this_color ); // r
+            this_color = *glb_color0_data++;
+            *dst_f32++ = normalize_color( this_color ); // g
+            this_color = *glb_color0_data++;
+            *dst_f32++ = normalize_color( this_color ); // b
+            this_color = *glb_color0_data++;
+            this_color = 1.0f;
+            *dst_f32++ = normalize_color( this_color ); // a
+          } else {
+            *dst_f32++ = 1.0f; // r
+            *dst_f32++ = 1.0f; // g
+            *dst_f32++ = 1.0f; // b
+            *dst_f32++ = 1.0f; // a
+          }
         }
         
         u16* glb_index_data = glb_imported_object.get_index_data_pointer( i );
