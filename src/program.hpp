@@ -33,6 +33,7 @@ void init_program() {
   u32     current_offset_in_gl_array_buffer         = 0;
   u32     current_offset_in_gl_element_array_buffer = 0;
   Entity_Class* entity_class = NULL;
+  GLsizei stride = GLsizei( 13 * sizeof( f32 ) ); // 13 floats per vertex
   
   do {
     
@@ -104,16 +105,15 @@ void init_program() {
           position_attribute_location = glGetAttribLocation ( shader_program_id, "aPosition" );
           mvp_uniform_location        = glGetUniformLocation( shader_program_id, "uMVP" );
           
-          GLsizei stride = GLsizei( 13 * sizeof( f32 ) ); // 13 floats per vertex
+          
           // load the vertex data
-          GLCall( glVertexAttribPointer( position_attribute_location, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0 ) );
           GLCall( glEnableVertexAttribArray( position_attribute_location ) );
           
           f32 aspectRatio = ( f32 ) sdl_params.window_width / ( f32 ) sdl_params.window_height;
           
           projection = glm::perspective( glm::radians( 45.0f ), aspectRatio, 0.1f, 100.0f );
           view = glm::lookAt(
-              glm::vec3( 4, 3, 3 )
+              glm::vec3( 14, 13, 13 )
             , glm::vec3( 0, 0, 0 )
             , glm::vec3( 0, 1, 0 )
           );
@@ -148,10 +148,12 @@ void init_program() {
       for ( u32 i = 0; i < mesh_count; i++ ) {
         glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[0][0] );
         
-        GLsizei       index_count_for_mesh  = ( GLsizei )       entity_class -> get_index_count( i );
-        const GLvoid* offset_in_buffer      = ( const GLvoid* ) entity_class -> get_index_offset_in_gl( i );
+        GLsizei       index_count_for_mesh    = ( GLsizei )       entity_class -> get_index_count( i );
+        const GLvoid* index_offset_in_buffer  = ( const GLvoid* ) entity_class -> get_index_offset_in_gl( i );
+        const GLvoid* pointer                 = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl( i );
         
-        glDrawElements( GL_TRIANGLES, index_count_for_mesh, GL_UNSIGNED_SHORT, offset_in_buffer );
+        GLCall( glVertexAttribPointer( position_attribute_location, 3, GL_FLOAT, GL_FALSE, stride, pointer ) );
+        GLCall( glDrawElements( GL_TRIANGLES, index_count_for_mesh, GL_UNSIGNED_SHORT, index_offset_in_buffer ) );
         
       }
       

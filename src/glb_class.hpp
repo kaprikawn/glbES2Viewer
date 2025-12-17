@@ -211,6 +211,7 @@ class Glb_imported_object {
       json = init_char_star( this_json_bytes + 1 );
       pull_out_json_string( &glb_file, json, this_json_bytes );
       json_bytes = this_json_bytes;
+      int fadsfdasf = 19;
     }
     
     void set_totol_mesh_count () {

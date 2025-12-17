@@ -113,6 +113,10 @@ class Entity_Class {
       return mesh_array[ mesh_index ].index_offset_in_gl_buffer_in_bytes;
     }
     
+    u32 get_vertex_offset_in_gl ( u32 mesh_index ) {
+      return mesh_array[ mesh_index ].vertex_offset_in_gl_buffer_in_bytes;
+    }
+    
 };
 
 #endif //ENTITY_CLASS_HPP
