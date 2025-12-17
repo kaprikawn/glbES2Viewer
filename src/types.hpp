@@ -24,4 +24,12 @@ typedef unsigned char uchar;
 #define Gigabytes(Value) (Megabytes(Value)*1024LL)
 #define Terabytes(Value) (Gigabytes(Value)*1024LL)
 
+// define the size of a vertex for upload into gl buffer
+const u32 VERTEX_BYTES =
+  ( sizeof( f32 ) * 4 ) // four float for position ... x, y, z, w
++ ( sizeof( f32 ) * 3 ) // three values for normals
++ ( sizeof( f32 ) * 2 ) // two uv texture coordinates
++ ( sizeof( f32 ) * 4 ) // four floats for colour ... r, g, b, a
+;
+
 #endif //TYPES_HPP

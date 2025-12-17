@@ -10,6 +10,7 @@
 #include "../ext/glm/glm.hpp"
 #include "../ext/glm/gtc/matrix_transform.hpp"
 #include "glb_class.hpp"
+#include "entity_class.hpp"
 
 void init_program() {
   
@@ -28,6 +29,11 @@ void init_program() {
   bool32 running = true;
   
   GLsizei total_index_count;
+  u32     mesh_count = 0;
+  u32     current_offset_in_gl_array_buffer         = 0;
+  u32     current_offset_in_gl_element_array_buffer = 0;
+  Entity_Class* entity_class = NULL;
+  GLsizei stride = GLsizei( 13 * sizeof( f32 ) ); // 13 floats per vertex
   
   do {
     
@@ -59,7 +65,7 @@ void init_program() {
           GLuint  vbo;
           GLuint  ibo;
           
-          u32  vertex_buffer_size = glb_imported_object.get_data_total_bytes( "VERTEX" );
+          u32  vertex_buffer_size = VERTEX_BYTES * glb_imported_object.get_total_vertex_count();
           u32  index_buffer_size  = glb_imported_object.get_data_total_bytes( "INDEX" );
           
           SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "vertex_buffer_size = %d\n", vertex_buffer_size );
@@ -74,13 +80,19 @@ void init_program() {
           GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, ( GLsizeiptr ) index_buffer_size, 0, GL_STATIC_DRAW ) );
           
           // upload data to gl
-          GLfloat*  vertex_data = ( GLfloat* )  glb_imported_object.get_pointer_to_gl_buffer_data( "VERTEX" );
-          GLushort* index_data  = ( GLushort* ) glb_imported_object.get_pointer_to_gl_buffer_data( "INDEX" );
+          
+          entity_class = new Entity_Class ( glb_imported_object );
+          mesh_count = entity_class -> get_mesh_count();
+          
+          // glb_imported_object.upload_mesh_data_to_gl();
+          
+          // GLfloat*  vertex_data = ( GLfloat* )  glb_imported_object.get_pointer_to_gl_buffer_data( "VERTEX" );
+          // GLushort* index_data  = ( GLushort* ) glb_imported_object.get_pointer_to_gl_buffer_data( "INDEX" );
           
           int dasfdasfdaf = 17;
           
-          GLCall( glBufferData( GL_ARRAY_BUFFER, vertex_buffer_size, vertex_data, GL_STATIC_DRAW ) );
-          GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, index_buffer_size, index_data, GL_STATIC_DRAW ) );
+          // GLCall( glBufferData( GL_ARRAY_BUFFER, vertex_buffer_size, vertex_data, GL_STATIC_DRAW ) );
+          // GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, index_buffer_size, index_data, GL_STATIC_DRAW ) );
           
           ////////////////////
           
@@ -93,15 +105,15 @@ void init_program() {
           position_attribute_location = glGetAttribLocation ( shader_program_id, "aPosition" );
           mvp_uniform_location        = glGetUniformLocation( shader_program_id, "uMVP" );
           
+          
           // load the vertex data
-          GLCall( glVertexAttribPointer( position_attribute_location, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0 ) );
           GLCall( glEnableVertexAttribArray( position_attribute_location ) );
           
-          f32 aspectRatio = ( f32 ) sdl_params.windowWidth / ( f32 ) sdl_params.windowHeight;
+          f32 aspectRatio = ( f32 ) sdl_params.window_width / ( f32 ) sdl_params.window_height;
           
           projection = glm::perspective( glm::radians( 45.0f ), aspectRatio, 0.1f, 100.0f );
           view = glm::lookAt(
-              glm::vec3( 4, 3, 3 )
+              glm::vec3( 14, 13, 13 )
             , glm::vec3( 0, 0, 0 )
             , glm::vec3( 0, 1, 0 )
           );
@@ -111,7 +123,7 @@ void init_program() {
           mvp = projection * view * model;
           
           // set the viewport
-          glViewport( 0, 0, ( f32 ) sdl_params.windowWidth, ( f32 ) sdl_params.windowHeight );
+          glViewport( 0, 0, ( f32 ) sdl_params.window_width, ( f32 ) sdl_params.window_height );
           
           glb_loaded = true;
           
@@ -133,9 +145,17 @@ void init_program() {
     
     if ( glb_loaded ) {
       
-      glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[0][0] );
-      
-      glDrawElements( GL_TRIANGLES, total_index_count, GL_UNSIGNED_SHORT, 0 );
+      for ( u32 i = 0; i < mesh_count; i++ ) {
+        glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[0][0] );
+        
+        GLsizei       index_count_for_mesh    = ( GLsizei )       entity_class -> get_index_count( i );
+        const GLvoid* index_offset_in_buffer  = ( const GLvoid* ) entity_class -> get_index_offset_in_gl( i );
+        const GLvoid* pointer                 = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl( i );
+        
+        GLCall( glVertexAttribPointer( position_attribute_location, 3, GL_FLOAT, GL_FALSE, stride, pointer ) );
+        GLCall( glDrawElements( GL_TRIANGLES, index_count_for_mesh, GL_UNSIGNED_SHORT, index_offset_in_buffer ) );
+        
+      }
       
     }
     
