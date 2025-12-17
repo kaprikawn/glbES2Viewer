@@ -164,8 +164,9 @@ class Glb_imported_object {
     Glb_Mesh_Data*  mesh_data_array;
     u32             vertex_data_total_bytes = 0;
     u32             index_data_total_bytes  = 0;
-    u32             bin_start_offset = 0;
-    u32             total_index_count = 0;
+    u32             bin_start_offset        = 0;
+    u32             total_vertex_count      = 0;
+    u32             total_index_count       = 0;
     
     f32*            gl_vertex_data = NULL; // raw stream of vertices for upload to gl buffer
     u16*            gl_index_data = NULL;
@@ -238,14 +239,17 @@ class Glb_imported_object {
       size_t bytes = size_t ( mesh_count * sizeof( Glb_Mesh_Data ) );
       mesh_data_array = ( Glb_Mesh_Data* ) malloc ( bytes );
       
-      total_index_count = 0;
+      total_vertex_count  = 0;
+      total_index_count   = 0;
       
       for ( u32 i = 0; i < mesh_count; i++ ) {
         mesh_data_array[ i ].set_mesh_index ( i );
         mesh_data_array[ i ].set_buffer_view_data ( json, json_bytes );
         mesh_data_array[ i ].populate_mesh_data( glb_file_binary_data_pointer );
         
+        u32 this_vertex_count = mesh_data_array[ i ].get_count( "VERTEX" );
         u32 this_index_count = mesh_data_array[ i ].get_count( "INDEX" );
+        total_vertex_count += this_vertex_count;
         total_index_count += this_index_count;
         
         int f = 43;
@@ -378,6 +382,10 @@ class Glb_imported_object {
       }
       
       return result;
+    }
+    
+    u32 get_total_vertex_count() {
+      return total_vertex_count;
     }
     
     u32 get_total_index_count() {

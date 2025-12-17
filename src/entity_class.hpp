@@ -4,14 +4,6 @@
 #include "glb_class.hpp"
 #include "types.hpp"
 
-// define the size of a vertex for upload into gl buffer
-const u32 VERTEX_BYTES =
-  ( sizeof( f32 ) * 4 ) // four float for position ... x, y, z, w
-+ ( sizeof( f32 ) * 3 ) // three values for normals
-+ ( sizeof( f32 ) * 2 ) // two uv texture coordinates
-+ ( sizeof( f32 ) * 4 ) // four floats for colour ... r, g, b, a
-;
-
 struct Mesh {
   u32             vertex_byte_length;
   u32             vertex_count;
@@ -32,6 +24,9 @@ class Entity_Class {
     
     // constructor - transfer data across from the glb object
     Entity_Class( Glb_imported_object glb_imported_object ) {
+      
+      u32 current_gl_array_buffer_offset          = 0;
+      u32 current_gl_element_array_buffer_offset  = 0;
       
       mesh_count = glb_imported_object.get_total_mesh_count();
       mesh_array = ( Mesh* ) malloc ( ( size_t )( sizeof( Mesh ) * mesh_count ) );
@@ -77,7 +72,30 @@ class Entity_Class {
         u16* dst_u16 = mesh_array[ i ].index_data;
         memcpy ( dst_u16, glb_index_data, index_data_bytes );
         
+        mesh_array[ i ].vertex_offset_in_gl_buffer_in_bytes = current_gl_array_buffer_offset;
+        mesh_array[ i ].index_offset_in_gl_buffer_in_bytes  = current_gl_element_array_buffer_offset;
         
+        // vertex data
+        {
+          GLenum          target          = GL_ARRAY_BUFFER;
+          GLintptr        offset          = ( GLintptr ) current_gl_array_buffer_offset;
+          GLsizeiptr      size            = ( GLsizeiptr ) vertex_data_bytes;
+          const GLvoid *  data            = ( const GLvoid* ) mesh_array[ i ].vertex_data;
+          GLCall( glBufferSubData( target, offset, size, data ) );
+        }
+        
+         // index data
+        {
+          GLenum          target          = GL_ELEMENT_ARRAY_BUFFER;
+          GLintptr        offset          = current_gl_element_array_buffer_offset;
+          GLsizeiptr      size            = index_data_bytes;
+          const void*     data            = ( const GLvoid* ) mesh_array[ i ].index_data;
+          
+          GLCall( glBufferSubData( target, offset, size, data ) );
+        }
+        
+        current_gl_array_buffer_offset          += vertex_data_bytes;
+        current_gl_element_array_buffer_offset  += index_data_bytes;
       }
       
       int dafsdasfdsfdas = 87;

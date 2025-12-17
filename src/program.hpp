@@ -62,7 +62,7 @@ void init_program() {
           GLuint  vbo;
           GLuint  ibo;
           
-          u32  vertex_buffer_size = glb_imported_object.get_data_total_bytes( "VERTEX" );
+          u32  vertex_buffer_size = VERTEX_BYTES * glb_imported_object.get_total_vertex_count();
           u32  index_buffer_size  = glb_imported_object.get_data_total_bytes( "INDEX" );
           
           SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "vertex_buffer_size = %d\n", vertex_buffer_size );
@@ -80,7 +80,7 @@ void init_program() {
           
           Entity_Class entity_class ( glb_imported_object );
           
-          glb_imported_object.upload_mesh_data_to_gl();
+          // glb_imported_object.upload_mesh_data_to_gl();
           
           // GLfloat*  vertex_data = ( GLfloat* )  glb_imported_object.get_pointer_to_gl_buffer_data( "VERTEX" );
           // GLushort* index_data  = ( GLushort* ) glb_imported_object.get_pointer_to_gl_buffer_data( "INDEX" );
@@ -101,8 +101,9 @@ void init_program() {
           position_attribute_location = glGetAttribLocation ( shader_program_id, "aPosition" );
           mvp_uniform_location        = glGetUniformLocation( shader_program_id, "uMVP" );
           
+          GLsizei stride = GLsizei( 13 * sizeof( f32 ) ); // 13 floats per vertex
           // load the vertex data
-          GLCall( glVertexAttribPointer( position_attribute_location, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0 ) );
+          GLCall( glVertexAttribPointer( position_attribute_location, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0 ) );
           GLCall( glEnableVertexAttribArray( position_attribute_location ) );
           
           f32 aspectRatio = ( f32 ) sdl_params.window_width / ( f32 ) sdl_params.window_height;
