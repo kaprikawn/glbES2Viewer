@@ -38,22 +38,41 @@ class Mesh_Data {
     
   public : 
     
-    u32 upload_vertex_data_to_gl ( u32 offset_in_gl_buffer ) {
+    u32 upload_to_gl_array_buffer ( u32 offset_in_gl_buffer ) {
       
-      u32 result = 0; // return the amount of data uploaded so caller knows how much to add to the offset
+      u32 result = vertex_byte_length; // return the amount of data uploaded so caller knows how much to add to the offset
       
-      vertex_offset_in_gl_buffer_in_bytes = offset_in_gl_buffer;
-      
-      u32 byte_length = vertex_buffer_view_data.byte_length;
-      result = byte_length;
-      
+      GLCall( glBufferData( GL_ARRAY_BUFFER, vertex_byte_length, ( GLfloat* ) vertex_data, GL_STATIC_DRAW ) );
       
       return result;
     }
     
-    void populate_mesh_data ( ReadFileResult* glb_file  ) {
+    u32 upload_to_gl_element_array_buffer ( u32 offset_in_gl_buffer ) {
       
+      u32 result = index_byte_length; // return the amount of data uploaded so caller knows how much to add to the offset
       
+      GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, index_byte_length, ( GLushort* ) index_data, GL_STATIC_DRAW ) );
+      
+      return result;
+    }
+    
+    void populate_mesh_data ( char* glb_file_binary_data_pointer ) {
+      
+      u32 byte_offset;
+      
+      vertex_byte_length  = vertex_buffer_view_data.byte_length;
+      vertex_count        = vertex_accessor_data.count;
+      byte_offset         = vertex_buffer_view_data.byte_offset;
+      vertex_data         = ( f32* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
+      
+      index_byte_length   = index_buffer_view_data.byte_length;
+      index_count         = index_accessor_data.count;
+      byte_offset         = index_buffer_view_data.byte_offset;
+      index_data          = ( u16* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
+      
+      if ( index_accessor_data.component_type != 5123 ) {
+        SDL_LogInfo( SDL_LOG_CATEGORY_ERROR, "ERROR - Indices type is not u16 as expected\n" );
+      }
       
     }
     
@@ -170,9 +189,7 @@ class Glb_imported_object {
       u32 bin_header_in_bytes       = 8; // 4 bytes for chunk length, 4 bytes for chunk type
       bin_start_offset              = gltf_header_size_in_bytes + json_header_in_bytes + json_string_in_bytes + bin_header_in_bytes;
       
-      glb_file_binary_data_pointer  = 
-      
-      f32* src = ( f32* )( ( char* ) glb_file.contents + bin_start_offset + offset );
+      glb_file_binary_data_pointer  = ( char* )( ( char* ) glb_file.contents + bin_start_offset );
       
     }
     
@@ -193,11 +210,15 @@ class Glb_imported_object {
       size_t bytes = size_t ( mesh_count * sizeof( Mesh_Data ) );
       mesh_data_array = ( Mesh_Data* ) malloc ( bytes );
       
-      int g = 8;
+      total_index_count = 0;
       
       for ( u32 i = 0; i < mesh_count; i++ ) {
         mesh_data_array[ i ].set_mesh_index ( i );
         mesh_data_array[ i ].set_buffer_view_data ( json, json_bytes );
+        mesh_data_array[ i ].populate_mesh_data( glb_file_binary_data_pointer );
+        
+        u32 this_index_count = mesh_data_array[ i ].get_count( "INDEX" );
+        total_index_count += this_index_count;
         
         int f = 43;
       }
@@ -235,43 +256,43 @@ class Glb_imported_object {
       return result;
     }
     
-    void import_data_for_gl ( const char* type ) {
-      // just a stream of floats for upload to gl
-      f32*  dst_f32;
-      u16*  dst_u16 = gl_index_data;
+    // void import_data_for_gl ( const char* type ) {
+    //   // just a stream of floats for upload to gl
+    //   f32*  dst_f32;
+    //   u16*  dst_u16 = gl_index_data;
       
-      if ( strings_are_equal ( type, "VERTEX" ) ) {
-        dst_f32 = ( f32* ) gl_vertex_data;
-      } else if ( strings_are_equal ( type, "INDEX" ) ) {
-        total_index_count = 0;
-      }
+    //   if ( strings_are_equal ( type, "VERTEX" ) ) {
+    //     dst_f32 = ( f32* ) gl_vertex_data;
+    //   } else if ( strings_are_equal ( type, "INDEX" ) ) {
+    //     total_index_count = 0;
+    //   }
       
       
-      u32 index_count = 0;
+    //   u32 this_index_count = 0;
       
-      void* dst;
+    //   void* dst;
       
-      for ( u32 i = 0; i < mesh_count; i++ ) {
-        u32 offset      = mesh_data_array[ i ].get_binary_offset( type );
-        u32 byte_length = mesh_data_array[ i ].get_byte_length( type );
-        u32 count       = mesh_data_array[ i ].get_count( type );
+    //   for ( u32 i = 0; i < mesh_count; i++ ) {
+    //     u32 offset      = mesh_data_array[ i ].get_binary_offset( type );
+    //     u32 byte_length = mesh_data_array[ i ].get_byte_length( type );
+    //     u32 count       = mesh_data_array[ i ].get_count( type );
         
-        if ( strings_are_equal ( type, "VERTEX" ) ) {
-          f32* src = ( f32* )( ( char* ) glb_file.contents + bin_start_offset + offset );
-          dst = ( void* ) dst_f32;
-          memcpy ( dst_f32, src, byte_length );
-          dst_f32 += count;
-        } else if ( strings_are_equal ( type, "INDEX" ) ) {
-          u16* src = ( u16* )( ( char* ) glb_file.contents + bin_start_offset + offset );
-          dst = ( void* ) dst_u16;
-          memcpy ( dst_u16, src, byte_length );
-          dst_u16 += count;
+    //     if ( strings_are_equal ( type, "VERTEX" ) ) {
+    //       f32* src = ( f32* )( ( char* ) glb_file.contents + bin_start_offset + offset );
+    //       dst = ( void* ) dst_f32;
+    //       memcpy ( dst_f32, src, byte_length );
+    //       dst_f32 += count;
+    //     } else if ( strings_are_equal ( type, "INDEX" ) ) {
+    //       u16* src = ( u16* )( ( char* ) glb_file.contents + bin_start_offset + offset );
+    //       dst = ( void* ) dst_u16;
+    //       memcpy ( dst_u16, src, byte_length );
+    //       dst_u16 += count;
           
-          total_index_count += count;
-        }
-        // u32 dfasfdas = 7;
-      }
-    }
+    //       total_index_count += count;
+    //     }
+    //     // u32 dfasfdas = 7;
+    //   }
+    // }
     
     bool is_glb_file () {
       bool result = false;
@@ -281,6 +302,23 @@ class Glb_imported_object {
       }
       // @TODO : add error message
       return result;
+    }
+    
+    void upload_mesh_data_to_gl () {
+      
+      u32 offset_in_gl_array_buffer         = 0;
+      u32 offset_in_gl_element_array_buffer = 0;
+      
+      for ( u32 i = 0; i < mesh_count; i++ ) {
+        
+        u32 uploaded_bytes_array_buffer         = mesh_data_array[ i ].upload_to_gl_array_buffer( offset_in_gl_array_buffer );
+        u32 uploaded_bytes_element_array_buffer = mesh_data_array[ i ].upload_to_gl_element_array_buffer( offset_in_gl_element_array_buffer );
+        
+        offset_in_gl_array_buffer         += uploaded_bytes_array_buffer;
+        offset_in_gl_element_array_buffer += uploaded_bytes_element_array_buffer;
+        
+      }
+      
     }
     
     void import_glb_file() {

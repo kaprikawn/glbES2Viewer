@@ -76,13 +76,16 @@ void init_program() {
           GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, ( GLsizeiptr ) index_buffer_size, 0, GL_STATIC_DRAW ) );
           
           // upload data to gl
+          
+          glb_imported_object.upload_mesh_data_to_gl();
+          
           GLfloat*  vertex_data = ( GLfloat* )  glb_imported_object.get_pointer_to_gl_buffer_data( "VERTEX" );
           GLushort* index_data  = ( GLushort* ) glb_imported_object.get_pointer_to_gl_buffer_data( "INDEX" );
           
           int dasfdasfdaf = 17;
           
-          GLCall( glBufferData( GL_ARRAY_BUFFER, vertex_buffer_size, vertex_data, GL_STATIC_DRAW ) );
-          GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, index_buffer_size, index_data, GL_STATIC_DRAW ) );
+          // GLCall( glBufferData( GL_ARRAY_BUFFER, vertex_buffer_size, vertex_data, GL_STATIC_DRAW ) );
+          // GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, index_buffer_size, index_data, GL_STATIC_DRAW ) );
           
           ////////////////////
           
