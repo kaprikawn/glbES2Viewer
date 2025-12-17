@@ -10,7 +10,7 @@
 #include "../ext/glm/glm.hpp"
 #include "../ext/glm/gtc/matrix_transform.hpp"
 
-class Mesh_Data {
+class Glb_Mesh_Data {
   
   private : 
     u32                 mesh_index;
@@ -32,9 +32,6 @@ class Mesh_Data {
     u32             index_byte_length;
     u32             index_count;
     u16*            index_data;
-    
-    u32             vertex_offset_in_gl_buffer_in_bytes;
-    u32             index_offset_in_gl_buffer_in_bytes;
     
   public : 
     
@@ -76,19 +73,20 @@ class Mesh_Data {
       
     }
     
+    u32 get_byte_length ( const char* type ) {
+      u32 result = 0xFFFFFFFF;
+      
+      if ( strings_are_equal ( type, "VERTEX" ) ) {
+        result = vertex_buffer_view_data.byte_length;
+      } else if ( strings_are_equal ( type, "INDEX" ) ) {
+        result = index_buffer_view_data.byte_length;
+      }
+      
+      return result;
+    }
     
     void set_mesh_index ( u32 mesh_index_value ) {
       mesh_index = mesh_index_value;
-    }
-    
-    u32 get_byte_length ( const char* type ) {
-      u32 result = 0;
-      if ( strings_are_equal( "VERTEX", type ) ) {
-        result = vertex_buffer_view_data.byte_length;
-      } else if ( strings_are_equal( "INDEX", type ) ) {
-        result = index_buffer_view_data.byte_length;
-      }
-      return result;
     }
     
     u32 get_count ( const char* type ) {
@@ -128,6 +126,20 @@ class Mesh_Data {
       return result;
     }
     
+    f32* get_float_data_pointer ( const char* type ) {
+      f32* result = NULL;
+      
+      if ( strings_are_equal ( type, "VERTEX" ) ) {
+        result = vertex_data;
+      }
+      
+      return result;
+    }
+    
+    u16* get_index_data_pointer() {
+      return index_data;
+    }
+    
 };
 
 enum GL_COMPONENT_TYPE {
@@ -149,7 +161,7 @@ class Glb_imported_object {
     char*           json = NULL;
     u32             json_bytes;
     u32             mesh_count;
-    Mesh_Data*      mesh_data_array;
+    Glb_Mesh_Data*  mesh_data_array;
     u32             vertex_data_total_bytes = 0;
     u32             index_data_total_bytes  = 0;
     u32             bin_start_offset = 0;
@@ -200,15 +212,31 @@ class Glb_imported_object {
       json_bytes = this_json_bytes;
     }
     
-    void set_mesh_count () {
+    void set_totol_mesh_count () {
       u32 this_mesh_count = count_meshes ( json, json_bytes );
       mesh_count = this_mesh_count;
     }
     
+    u32 get_total_mesh_count () {
+      return mesh_count;
+    }
+    
+    u32 get_mesh_byte_length ( u32 mesh_index, const char* type ) {
+      u32 result = 0xFFFFFFFF;
+      result = mesh_data_array[ mesh_index ].get_byte_length( type );
+      return result;
+    }
+    
+    u32 get_mesh_element_count( u32 mesh_index, const char* type ) {
+      u32 result = 0xFFFFFFFF;
+      result = mesh_data_array[ mesh_index ].get_count( type );
+      return result;
+    }
+    
     void populate_mesh_data() {
       
-      size_t bytes = size_t ( mesh_count * sizeof( Mesh_Data ) );
-      mesh_data_array = ( Mesh_Data* ) malloc ( bytes );
+      size_t bytes = size_t ( mesh_count * sizeof( Glb_Mesh_Data ) );
+      mesh_data_array = ( Glb_Mesh_Data* ) malloc ( bytes );
       
       total_index_count = 0;
       
@@ -331,7 +359,7 @@ class Glb_imported_object {
       }
       
       update_json();
-      set_mesh_count();
+      set_totol_mesh_count();
       populate_mesh_data();
       calculate_data_total_bytes( "VERTEX" );
       calculate_data_total_bytes( "INDEX" );
@@ -355,6 +383,20 @@ class Glb_imported_object {
     u32 get_total_index_count() {
       u32 result = total_index_count;
       return result;
+    }
+    
+    f32* get_float_data_pointer ( u32 mesh_index, const char* type ) {
+      f32* result = NULL;
+      
+      if ( strings_are_equal ( type, "VERTEX" ) ) {
+        result = mesh_data_array[ mesh_index ].get_float_data_pointer( type );
+      }
+      
+      return result;
+    }
+    
+    u16* get_index_data_pointer ( u32 mesh_index ) {
+      return mesh_data_array[ mesh_index ].get_index_data_pointer();
     }
 };
 

@@ -10,6 +10,7 @@
 #include "../ext/glm/glm.hpp"
 #include "../ext/glm/gtc/matrix_transform.hpp"
 #include "glb_class.hpp"
+#include "entity_class.hpp"
 
 void init_program() {
   
@@ -77,10 +78,12 @@ void init_program() {
           
           // upload data to gl
           
+          Entity_Class entity_class ( glb_imported_object );
+          
           glb_imported_object.upload_mesh_data_to_gl();
           
-          GLfloat*  vertex_data = ( GLfloat* )  glb_imported_object.get_pointer_to_gl_buffer_data( "VERTEX" );
-          GLushort* index_data  = ( GLushort* ) glb_imported_object.get_pointer_to_gl_buffer_data( "INDEX" );
+          // GLfloat*  vertex_data = ( GLfloat* )  glb_imported_object.get_pointer_to_gl_buffer_data( "VERTEX" );
+          // GLushort* index_data  = ( GLushort* ) glb_imported_object.get_pointer_to_gl_buffer_data( "INDEX" );
           
           int dasfdasfdaf = 17;
           
