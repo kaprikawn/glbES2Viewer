@@ -29,8 +29,10 @@ void init_program() {
   bool32 running = true;
   
   GLsizei total_index_count;
+  u32     mesh_count = 0;
   u32     current_offset_in_gl_array_buffer         = 0;
   u32     current_offset_in_gl_element_array_buffer = 0;
+  Entity_Class* entity_class = NULL;
   
   do {
     
@@ -78,7 +80,8 @@ void init_program() {
           
           // upload data to gl
           
-          Entity_Class entity_class ( glb_imported_object );
+          entity_class = new Entity_Class ( glb_imported_object );
+          mesh_count = entity_class -> get_mesh_count();
           
           // glb_imported_object.upload_mesh_data_to_gl();
           
@@ -142,9 +145,15 @@ void init_program() {
     
     if ( glb_loaded ) {
       
-      glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[0][0] );
-      
-      glDrawElements( GL_TRIANGLES, total_index_count, GL_UNSIGNED_SHORT, 0 );
+      for ( u32 i = 0; i < mesh_count; i++ ) {
+        glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[0][0] );
+        
+        GLsizei       index_count_for_mesh  = ( GLsizei )       entity_class -> get_index_count( i );
+        const GLvoid* offset_in_buffer      = ( const GLvoid* ) entity_class -> get_index_offset_in_gl( i );
+        
+        glDrawElements( GL_TRIANGLES, index_count_for_mesh, GL_UNSIGNED_SHORT, offset_in_buffer );
+        
+      }
       
     }
     
