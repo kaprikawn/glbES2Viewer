@@ -24,7 +24,7 @@ f32 normalize_colour ( u8 value ) {
   } else if ( value == 0 ) {
     return 0.0f;
   }
-  return value * (1.0f / 255.0f); 
+  return value * ( 1.0f / 255.0f ); 
 }
 
 class Entity_Class {
@@ -90,7 +90,7 @@ class Entity_Class {
             this_colour = *glb_colour0_data++;
             *dst_f32++  = normalize_colour( this_colour ); // b
             this_colour = *glb_colour0_data++;
-            this_colour = 1.0f;
+            this_colour = 255;
             *dst_f32++  = normalize_colour( this_colour ); // a
           } else {
             *dst_f32++ = 1.0f; // r
@@ -145,8 +145,17 @@ class Entity_Class {
       return mesh_array[ mesh_index ].index_offset_in_gl_buffer_in_bytes;
     }
     
-    u32 get_vertex_offset_in_gl ( u32 mesh_index ) {
-      return mesh_array[ mesh_index ].vertex_offset_in_gl_buffer_in_bytes;
+    u32 get_vertex_offset_in_gl ( u32 mesh_index, const char* type ) {
+      u32 result = 0;
+      
+      if ( strings_are_equal ( type, "VERTEX" ) ) {
+        result = mesh_array[ mesh_index ].vertex_offset_in_gl_buffer_in_bytes;
+      } else if ( strings_are_equal ( type, "COLOR0" ) ) {
+        result = mesh_array[ mesh_index ].vertex_offset_in_gl_buffer_in_bytes;
+        u32 bytes_before_colours = u32 ( sizeof( f32 ) * 9 ); // there are nine floats in the vertex before you get to colour data so we need to offset by that
+        result += bytes_before_colours;
+      }
+      return result;
     }
     
 };
