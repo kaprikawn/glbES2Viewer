@@ -8,9 +8,9 @@ struct Mesh {
   u32             vertex_byte_length;
   u32             vertex_count;
   f32*            vertex_data;
-  u32             color_byte_length = 0;
-  u32             color_count = 0;
-  f32*            color_data = NULL;
+  u32             colour_byte_length = 0;
+  u32             colour_count = 0;
+  f32*            colour_data = NULL;
   u32             index_byte_length;
   u32             index_count;
   u16*            index_data;
@@ -18,7 +18,7 @@ struct Mesh {
   u32             index_offset_in_gl_buffer_in_bytes;
 };
 
-f32 normalize_color ( u8 value ) {
+f32 normalize_colour ( u8 value ) {
   if ( value == 255 ) {
     return 1.0f;
   } else if ( value == 0 ) {
@@ -61,11 +61,11 @@ class Entity_Class {
         f32* dst_f32 = mesh_array[ i ].vertex_data;
         
         f32* glb_vertex_data = glb_imported_object.get_float_data_pointer( i, "VERTEX" );
-        u8*  glb_color0_data = NULL;
+        u8*  glb_colour0_data = NULL;
         
         bool vertices_have_colours = glb_imported_object.glb_has_colours();
         if ( vertices_have_colours ) {
-          glb_color0_data = glb_imported_object.get_color0_data_pointer( i );
+          glb_colour0_data = glb_imported_object.get_colour0_data_pointer( i );
         }
         
         u32 current_count_loaded = 0;
@@ -82,16 +82,16 @@ class Entity_Class {
           *dst_f32++ = 0.0f; // v
           
           if ( vertices_have_colours ) {
-            u8 this_color;
-            this_color = *glb_color0_data++;
-            *dst_f32++ = normalize_color( this_color ); // r
-            this_color = *glb_color0_data++;
-            *dst_f32++ = normalize_color( this_color ); // g
-            this_color = *glb_color0_data++;
-            *dst_f32++ = normalize_color( this_color ); // b
-            this_color = *glb_color0_data++;
-            this_color = 1.0f;
-            *dst_f32++ = normalize_color( this_color ); // a
+            u8 this_colour;
+            this_colour = *glb_colour0_data++;
+            *dst_f32++  = normalize_colour( this_colour ); // r
+            this_colour = *glb_colour0_data++;
+            *dst_f32++  = normalize_colour( this_colour ); // g
+            this_colour = *glb_colour0_data++;
+            *dst_f32++  = normalize_colour( this_colour ); // b
+            this_colour = *glb_colour0_data++;
+            this_colour = 1.0f;
+            *dst_f32++  = normalize_colour( this_colour ); // a
           } else {
             *dst_f32++ = 1.0f; // r
             *dst_f32++ = 1.0f; // g
@@ -110,8 +110,8 @@ class Entity_Class {
         // vertex data
         {
           GLenum          target          = GL_ARRAY_BUFFER;
-          GLintptr        offset          = ( GLintptr ) current_gl_array_buffer_offset;
-          GLsizeiptr      size            = ( GLsizeiptr ) vertex_data_bytes;
+          GLintptr        offset          = ( GLintptr )      current_gl_array_buffer_offset;
+          GLsizeiptr      size            = ( GLsizeiptr )    vertex_data_bytes;
           const GLvoid *  data            = ( const GLvoid* ) mesh_array[ i ].vertex_data;
           GLCall( glBufferSubData( target, offset, size, data ) );
         }

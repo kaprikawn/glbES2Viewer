@@ -22,19 +22,19 @@ class Glb_Mesh_Data {
     AccessorData    normal_accessor_data;
     AccessorData    index_accessor_data;
     AccessorData    tex_coord0_accessor_data;
-    AccessorData    color0_accessor_data;
+    AccessorData    colour0_accessor_data;
     BufferViewData  vertex_buffer_view_data;
     BufferViewData  normal_buffer_view_data;
     BufferViewData  index_buffer_view_data;
     BufferViewData  tex_coord0_buffer_view_data;
-    BufferViewData  color0_buffer_view_data;
+    BufferViewData  colour0_buffer_view_data;
     
     u32             vertex_byte_length;
     u32             vertex_count;
     f32*            vertex_data;
-    u32             color0_byte_length;
-    u32             color0_count = 0;
-    u8*             color0_data;
+    u32             colour0_byte_length;
+    u32             colour0_count = 0;
+    u8*             colour0_data;
     u32             index_byte_length;
     u32             index_count;
     u16*            index_data;
@@ -50,15 +50,15 @@ class Glb_Mesh_Data {
       byte_offset         = vertex_buffer_view_data.byte_offset;
       vertex_data         = ( f32* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
       
-      color0_byte_length  = color0_buffer_view_data.byte_length;
-      color0_count        = color0_accessor_data.count;
-      if ( color0_count > 0 && color0_byte_length > 0 ) {
+      colour0_byte_length  = colour0_buffer_view_data.byte_length;
+      colour0_count        = colour0_accessor_data.count;
+      if ( colour0_count > 0 && colour0_byte_length > 0 ) {
         has_colours = true;
       }
       
       if( has_colours ) {
-        byte_offset         = color0_buffer_view_data.byte_offset;
-        color0_data         = ( u8* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
+        byte_offset         = colour0_buffer_view_data.byte_offset;
+        colour0_data         = ( u8* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
       }
       
       index_byte_length   = index_buffer_view_data.byte_length;
@@ -110,13 +110,13 @@ class Glb_Mesh_Data {
       normal_accessor_data        = get_accessor_data ( mesh_position_indices.normals, json_string, json_char_count );
       index_accessor_data         = get_accessor_data ( mesh_position_indices.indices, json_string, json_char_count );
       tex_coord0_accessor_data    = get_accessor_data ( mesh_position_indices.texcoord_0, json_string, json_char_count );
-      color0_accessor_data        = get_accessor_data ( mesh_position_indices.color_0, json_string, json_char_count );
+      colour0_accessor_data        = get_accessor_data ( mesh_position_indices.colour_0, json_string, json_char_count );
       
       vertex_buffer_view_data     = get_buffer_view_data ( vertex_accessor_data.buffer_view, json_string, json_char_count );
       normal_buffer_view_data     = get_buffer_view_data ( normal_accessor_data.buffer_view, json_string, json_char_count );
       index_buffer_view_data      = get_buffer_view_data ( index_accessor_data.buffer_view, json_string, json_char_count );
       tex_coord0_buffer_view_data = get_buffer_view_data ( tex_coord0_accessor_data.buffer_view, json_string, json_char_count );
-      color0_buffer_view_data     = get_buffer_view_data ( color0_accessor_data.buffer_view, json_string, json_char_count );
+      colour0_buffer_view_data     = get_buffer_view_data ( colour0_accessor_data.buffer_view, json_string, json_char_count );
       
       int g = 4;
     }
@@ -145,8 +145,8 @@ class Glb_Mesh_Data {
       return index_data;
     }
     
-    u8* get_color0_data_pointer () {
-      return color0_data;
+    u8* get_colour0_data_pointer () {
+      return colour0_data;
     }
     
 };
@@ -339,8 +339,6 @@ class Glb_imported_object {
       
       if ( strings_are_equal ( type, "VERTEX" ) ) {
         result = mesh_data_array[ mesh_index ].get_float_data_pointer( type );
-      } else if ( strings_are_equal ( type, "COLOR0" ) ) {
-        result = mesh_data_array[ mesh_index ].get_float_data_pointer( type );
       }
       
       return result;
@@ -350,8 +348,8 @@ class Glb_imported_object {
       return mesh_data_array[ mesh_index ].get_index_data_pointer();
     }
     
-    u8* get_color0_data_pointer ( u32 mesh_index ) {
-      return mesh_data_array[ mesh_index ].get_color0_data_pointer();
+    u8* get_colour0_data_pointer ( u32 mesh_index ) {
+      return mesh_data_array[ mesh_index ].get_colour0_data_pointer();
     }
 };
 

@@ -152,7 +152,7 @@ void init_program() {
         const GLvoid* index_offset_in_buffer  = ( const GLvoid* ) entity_class -> get_index_offset_in_gl( i );
         const GLvoid* pointer                 = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl( i );
         
-        GLCall( glVertexAttribPointer( position_attribute_location, 3, GL_FLOAT, GL_FALSE, stride, pointer ) );
+        GLCall( glVertexAttribPointer( position_attribute_location, 4, GL_FLOAT, GL_FALSE, stride, pointer ) );
         GLCall( glDrawElements( GL_TRIANGLES, index_count_for_mesh, GL_UNSIGNED_SHORT, index_offset_in_buffer ) );
         
       }

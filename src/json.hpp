@@ -44,15 +44,15 @@ struct MeshData {
   u32     normal_count;
   u32     tex_coord0_data_in_bytes;
   u32     tex_coord0_count;
-  u32     color0_data_in_bytes;
-  u32     color0_count;
+  u32     colour0_data_in_bytes;
+  u32     colour0_count;
   u32     image_data_in_bytes;
   f32*    vertex_data;
   f32*    normal_data;
   u16*    index_data_raw;
   u32*    index_data;
   f32*    tex_coord0_data;
-  f32*    color0_data;
+  f32*    colour0_data;
   u8*     image_data;
   u32     gl_vertex_offset;
   u32     gl_normal_offset;
@@ -81,7 +81,7 @@ struct MeshPositionIndices {
   u32 vertices;
   u32 normals;
   u32 texcoord_0;
-  u32 color_0;
+  u32 colour_0;
   u32 indices;
   u32 material;
 };
@@ -339,7 +339,7 @@ s32 get_image_buffer_view_index( const char* json_string, u32 json_char_count ) 
   bool32  done_indices        = false;
   bool32  done_normals        = false;
   bool32  done_texcoord_0     = false;
-  bool32  done_color_0        = false;
+  bool32  done_colour_0        = false;
   bool32  done_material       = false;
   
   char this_char;
@@ -479,7 +479,7 @@ MeshPositionIndices get_mesh_position_indices( u32 target_mesh_index, const char
   bool32  done_indices        = false;
   bool32  done_normals        = false;
   bool32  done_texcoord_0     = false;
-  bool32  done_color_0        = false;
+  bool32  done_colour_0        = false;
   bool32  done_material       = false;
   
   char this_char;
@@ -597,8 +597,8 @@ MeshPositionIndices get_mesh_position_indices( u32 target_mesh_index, const char
             result.texcoord_0 = atoi( value );
             done_texcoord_0 = true;
           } else if( strings_are_equal( key, "COLOR_0" ) ) {
-            result.color_0 = atoi( value );
-            done_color_0 = true;
+            result.colour_0 = atoi( value );
+            done_colour_0 = true;
           } else if( strings_are_equal( key, "indices" ) ) {
             result.indices = atoi( value );
             done_indices = true;
@@ -964,34 +964,34 @@ MeshData populate_mesh_data( u32 target_mesh_index, const char* json_string, Rea
   AccessorData normal_accessor_data     = get_accessor_data( mesh_position_indices.normals, json_string, json_char_count );
   AccessorData index_accessor_data      = get_accessor_data( mesh_position_indices.indices, json_string, json_char_count );
   AccessorData tex_coord0_accessor_data = get_accessor_data( mesh_position_indices.texcoord_0, json_string, json_char_count );
-  AccessorData color0_accessor_data     = get_accessor_data( mesh_position_indices.color_0, json_string, json_char_count );
+  AccessorData colour0_accessor_data     = get_accessor_data( mesh_position_indices.colour_0, json_string, json_char_count );
   
   BufferViewData vertex_buffer_view_data      = get_buffer_view_data( vertex_accessor_data.buffer_view, json_string, json_char_count );
   BufferViewData normal_buffer_view_data      = get_buffer_view_data( normal_accessor_data.buffer_view, json_string, json_char_count );
   BufferViewData index_buffer_view_data       = get_buffer_view_data( index_accessor_data.buffer_view, json_string, json_char_count );
   BufferViewData tex_coord0_buffer_view_data  = get_buffer_view_data( tex_coord0_accessor_data.buffer_view, json_string, json_char_count );
-  BufferViewData color0_buffer_view_data      = get_buffer_view_data( color0_accessor_data.buffer_view, json_string, json_char_count );
+  BufferViewData colour0_buffer_view_data      = get_buffer_view_data( colour0_accessor_data.buffer_view, json_string, json_char_count );
   
   u32 vertex_data_total_offset      = bin_start_offset + vertex_buffer_view_data.byte_offset;
   u32 normal_data_total_offset      = bin_start_offset + normal_buffer_view_data.byte_offset;
   u32 index_data_total_offset       = bin_start_offset + index_buffer_view_data.byte_offset;
   u32 tex_coord0_data_total_offset  = bin_start_offset + tex_coord0_buffer_view_data.byte_offset;
-  u32 color0_data_total_offset      = bin_start_offset + color0_buffer_view_data.byte_offset;
+  u32 colour0_data_total_offset      = bin_start_offset + colour0_buffer_view_data.byte_offset;
   
   result.vertex_data_in_bytes     = vertex_buffer_view_data.byte_length;
   result.normal_data_in_bytes     = normal_buffer_view_data.byte_length;
   result.index_data_raw_in_bytes  = index_buffer_view_data.byte_length;
   result.tex_coord0_data_in_bytes = tex_coord0_buffer_view_data.byte_length;
-  result.color0_data_in_bytes     = color0_buffer_view_data.byte_length;
+  result.colour0_data_in_bytes     = colour0_buffer_view_data.byte_length;
   result.vertex_count             = vertex_accessor_data.count;
   result.normal_count             = normal_accessor_data.count;
   result.index_count              = index_accessor_data.count;
   result.tex_coord0_count         = tex_coord0_accessor_data.count;
-  result.color0_count             = color0_accessor_data.count;
+  result.colour0_count             = colour0_accessor_data.count;
   result.vertex_data              = ( f32* )( ( char* )gltf_contents + vertex_data_total_offset );
   result.normal_data              = ( f32* )( ( char* )gltf_contents + normal_data_total_offset );
   result.tex_coord0_data          = ( f32* )( ( char* )gltf_contents + tex_coord0_data_total_offset );
-  result.color0_data              = ( f32* )( ( char* )gltf_contents + color0_data_total_offset );
+  result.colour0_data              = ( f32* )( ( char* )gltf_contents + colour0_data_total_offset );
   result.index_data_raw           = ( u16* )( ( char* )gltf_contents + index_data_total_offset );
   
   s32 image_buffer_view_index = get_image_buffer_view_index( json_string, json_char_count );
@@ -1037,7 +1037,7 @@ GltfBufferViewInfo get_glft_buffer_view_info( u32 target_mesh_index, const char*
   } else if( content_type == GLTF_TEX_COORD0 ) {
     accessor_data = get_accessor_data( mesh_position_indices.texcoord_0, json_string, json_char_count );
   } else if( content_type == GLTF_COLOR0 ) {
-    accessor_data = get_accessor_data( mesh_position_indices.color_0, json_string, json_char_count );
+    accessor_data = get_accessor_data( mesh_position_indices.colour_0, json_string, json_char_count );
   } else {
     return result;
   }
@@ -1076,7 +1076,7 @@ void* get_gltf_data_pointer( u32 target_mesh_index, const char* gltf_contents, J
   } else if( content_type == GLTF_TEX_COORD0 ) {
     accessor_data = get_accessor_data( mesh_position_indices.texcoord_0, json_string, json_char_count );
   } else if( content_type == GLTF_COLOR0 ) {
-    accessor_data = get_accessor_data( mesh_position_indices.color_0, json_string, json_char_count );
+    accessor_data = get_accessor_data( mesh_position_indices.colour_0, json_string, json_char_count );
   } else if( content_type == GLTF_IMAGE ) {
     buffer_view = get_image_buffer_view_index( json.json_string, json.json_char_count );
   }
@@ -1120,7 +1120,7 @@ u32 get_gltf_data_count( u32 target_mesh_index, const char* gltf_contents, JsonS
     accessor_data = get_accessor_data( mesh_position_indices.texcoord_0, json_string, json_char_count );
     count_per_value = 2;
   } else if( content_type == GLTF_COLOR0 ) {
-    accessor_data = get_accessor_data( mesh_position_indices.color_0, json_string, json_char_count );
+    accessor_data = get_accessor_data( mesh_position_indices.colour_0, json_string, json_char_count );
     count_per_value = 4;
   } else {
     return result;
