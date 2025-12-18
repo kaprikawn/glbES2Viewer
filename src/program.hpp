@@ -86,6 +86,7 @@ void init_program() {
           mesh_count = entity_class -> get_mesh_count();
           
           char*           shader_filename       = assets_dir_and_filename( "shaderVertexColours.glsl" );
+          // char*           shader_filename       = assets_dir_and_filename( "shaderDebug.glsl" );
           ReadFileResult  shader_file           = read_entire_file( shader_filename );
           u32             shader_program_id     = createShader( shader_file );
           

@@ -10,6 +10,22 @@
 #include "../ext/glm/glm.hpp"
 #include "../ext/glm/gtc/matrix_transform.hpp"
 
+u32 get_datatype_from_accessors_string ( const char* type ) {
+  u32 result = 0xFFFFFFFF;
+  
+  if ( strings_are_equal ( type, "VEC2" ) ) {
+    result =  ACCESSOR_VEC2;
+  } else if ( strings_are_equal ( type, "VEC3" ) ) {
+    result =  ACCESSOR_VEC3;
+  } else if ( strings_are_equal ( type, "VEC4" ) ) {
+    result =  ACCESSOR_VEC4;
+  } else if ( strings_are_equal ( type, "SCALAR" ) ) {
+    result =  ACCESSOR_SCALAR;
+  }
+  return result;
+}
+
+
 class Glb_Mesh_Data {
   
   private : 
@@ -34,7 +50,8 @@ class Glb_Mesh_Data {
     f32*            vertex_data;
     u32             colour0_byte_length;
     u32             colour0_count = 0;
-    u8*             colour0_data;
+    f32*            colour0_data;
+    u32             colour_datatype = 0xFFFFFFFF;
     u32             index_byte_length;
     u32             index_count;
     u16*            index_data;
@@ -58,7 +75,8 @@ class Glb_Mesh_Data {
       
       if( has_colours ) {
         byte_offset         = colour0_buffer_view_data.byte_offset;
-        colour0_data         = ( u8* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
+        colour0_data         = ( f32* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
+        colour_datatype     = get_datatype_from_accessors_string ( colour0_accessor_data.type );
       }
       
       index_byte_length   = index_buffer_view_data.byte_length;
@@ -110,7 +128,7 @@ class Glb_Mesh_Data {
       normal_accessor_data        = get_accessor_data ( mesh_position_indices.normals, json_string, json_char_count );
       index_accessor_data         = get_accessor_data ( mesh_position_indices.indices, json_string, json_char_count );
       tex_coord0_accessor_data    = get_accessor_data ( mesh_position_indices.texcoord_0, json_string, json_char_count );
-      colour0_accessor_data        = get_accessor_data ( mesh_position_indices.colour_0, json_string, json_char_count );
+      colour0_accessor_data       = get_accessor_data ( mesh_position_indices.colour_0, json_string, json_char_count );
       
       vertex_buffer_view_data     = get_buffer_view_data ( vertex_accessor_data.buffer_view, json_string, json_char_count );
       normal_buffer_view_data     = get_buffer_view_data ( normal_accessor_data.buffer_view, json_string, json_char_count );
@@ -145,19 +163,14 @@ class Glb_Mesh_Data {
       return index_data;
     }
     
-    u8* get_colour0_data_pointer () {
+    f32* get_colour0_data_pointer () {
       return colour0_data;
     }
     
-};
-
-enum GL_COMPONENT_TYPE {
-    GL_COMPONENT_TYPE_SIGNED_BYTE    = 5120 // 8 bits
-  , GL_COMPONENT_TYPE_UNSIGNED_BYTE  = 5121 // 8 bits
-  , GL_COMPONENT_TYPE_SIGNED_SHORT   = 5122 // 16 bits
-  , GL_COMPONENT_TYPE_UNSIGNED_SHORT = 5123 // 16 bits
-  , GL_COMPONENT_TYPE_UNSIGNED_INT   = 5125 // 32 bits
-  , GL_COMPONENT_TYPE_FLOAT          = 5126 // Signed 32 bits
+    u32 get_color_accessor_data_type () {
+      return colour_datatype;
+    }
+    
 };
 
 class Glb_imported_object {
@@ -348,8 +361,12 @@ class Glb_imported_object {
       return mesh_data_array[ mesh_index ].get_index_data_pointer();
     }
     
-    u8* get_colour0_data_pointer ( u32 mesh_index ) {
+    f32* get_colour0_data_pointer ( u32 mesh_index ) {
       return mesh_data_array[ mesh_index ].get_colour0_data_pointer();
+    }
+    
+    u32 get_color_accessor_data_type ( u32 mesh_index ) {
+      return mesh_data_array[ mesh_index ].get_color_accessor_data_type();
     }
 };
 

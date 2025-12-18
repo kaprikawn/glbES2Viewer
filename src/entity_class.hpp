@@ -61,11 +61,15 @@ class Entity_Class {
         f32* dst_f32 = mesh_array[ i ].vertex_data;
         
         f32* glb_vertex_data = glb_imported_object.get_float_data_pointer( i, "VERTEX" );
-        u8*  glb_colour0_data = NULL;
+        f32* glb_colour0_data = NULL;
+        u32 color_accessor_data_type;
         
         bool vertices_have_colours = glb_imported_object.glb_has_colours();
         if ( vertices_have_colours ) {
           glb_colour0_data = glb_imported_object.get_colour0_data_pointer( i );
+          
+          color_accessor_data_type = glb_imported_object.get_color_accessor_data_type ( i );
+          
         }
         
         u32 current_count_loaded = 0;
@@ -82,16 +86,29 @@ class Entity_Class {
           *dst_f32++ = 0.0f; // v
           
           if ( vertices_have_colours ) {
-            u8 this_colour;
-            this_colour = *glb_colour0_data++;
-            *dst_f32++  = normalize_colour( this_colour ); // r
-            this_colour = *glb_colour0_data++;
-            *dst_f32++  = normalize_colour( this_colour ); // g
-            this_colour = *glb_colour0_data++;
-            *dst_f32++  = normalize_colour( this_colour ); // b
-            this_colour = *glb_colour0_data++;
-            this_colour = 255;
-            *dst_f32++  = normalize_colour( this_colour ); // a
+            
+            *dst_f32++ = *glb_colour0_data++; // r
+            *dst_f32++ = *glb_colour0_data++; // g
+            *dst_f32++ = *glb_colour0_data++; // b
+            if ( color_accessor_data_type == ACCESSOR_VEC3 ) {
+              *dst_f32++ = 1.0f; // a
+            } else if ( color_accessor_data_type == ACCESSOR_VEC4 ) {
+              *dst_f32++ = 1.0f; // a
+              glb_colour0_data++;
+            } else {
+              SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "ERROR - Unexpected colour datatype\n" );
+            }
+            
+            // u8 this_colour;
+            // this_colour = *glb_colour0_data++;
+            // *dst_f32++  = normalize_colour( this_colour ); // r
+            // this_colour = *glb_colour0_data++;
+            // *dst_f32++  = normalize_colour( this_colour ); // g
+            // this_colour = *glb_colour0_data++;
+            // *dst_f32++  = normalize_colour( this_colour ); // b
+            // this_colour = *glb_colour0_data++;
+            // this_colour = 255;
+            // *dst_f32++  = normalize_colour( this_colour ); // a
           } else {
             *dst_f32++ = 1.0f; // r
             *dst_f32++ = 1.0f; // g
