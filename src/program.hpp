@@ -36,6 +36,8 @@ void init_program() {
   Entity_Class* entity_class = NULL;
   GLsizei stride = GLsizei( 13 * sizeof( f32 ) ); // 13 floats per vertex
   
+  f32     y_rotation = 0;
+  
   do {
     
     SDL_Event event;
@@ -134,6 +136,17 @@ void init_program() {
     if ( glb_loaded ) {
       
       for ( u32 i = 0; i < mesh_count; i++ ) {
+        
+        y_rotation += 1.0f;
+        while ( y_rotation > 360.0f ) {
+          y_rotation -= 360.0f;
+        }
+        
+        model = glm::mat4( 1.0f );
+        float angle = glm::radians( y_rotation ); // Convert degrees to radians
+        model = glm::rotate( model, angle, glm::vec3( 0.0f, 1.0f, 0.0f ) );
+        mvp = projection * view * model;
+        
         glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[0][0] );
         
         GLsizei       index_count_for_mesh    = ( GLsizei )       entity_class -> get_index_count( i );
