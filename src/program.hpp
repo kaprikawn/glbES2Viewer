@@ -19,6 +19,7 @@ void init_program() {
   glm::mat4 model;
   glm::mat4 mvp;
   GLint     position_attribute_location;
+  GLint     colour_attribute_location;
   GLint     mvp_uniform_location;
   
   bool      glb_loaded = false;
@@ -34,6 +35,8 @@ void init_program() {
   u32     current_offset_in_gl_element_array_buffer = 0;
   Entity_Class* entity_class = NULL;
   GLsizei stride = GLsizei( 13 * sizeof( f32 ) ); // 13 floats per vertex
+  
+  f32     y_rotation = 0;
   
   do {
     
@@ -79,35 +82,23 @@ void init_program() {
           GLCall( glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ibo ) );
           GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, ( GLsizeiptr ) index_buffer_size, 0, GL_STATIC_DRAW ) );
           
-          // upload data to gl
-          
           entity_class = new Entity_Class ( glb_imported_object );
           mesh_count = entity_class -> get_mesh_count();
           
-          // glb_imported_object.upload_mesh_data_to_gl();
-          
-          // GLfloat*  vertex_data = ( GLfloat* )  glb_imported_object.get_pointer_to_gl_buffer_data( "VERTEX" );
-          // GLushort* index_data  = ( GLushort* ) glb_imported_object.get_pointer_to_gl_buffer_data( "INDEX" );
-          
-          int dasfdasfdaf = 17;
-          
-          // GLCall( glBufferData( GL_ARRAY_BUFFER, vertex_buffer_size, vertex_data, GL_STATIC_DRAW ) );
-          // GLCall( glBufferData( GL_ELEMENT_ARRAY_BUFFER, index_buffer_size, index_data, GL_STATIC_DRAW ) );
-          
-          ////////////////////
-          
-          char*           shader_filename       = assets_dir_and_filename( "shaderDebug.glsl" );
+          char*           shader_filename       = assets_dir_and_filename( "shaderVertexColours.glsl" );
+          // char*           shader_filename       = assets_dir_and_filename( "shaderDebug.glsl" );
           ReadFileResult  shader_file           = read_entire_file( shader_filename );
           u32             shader_program_id     = createShader( shader_file );
           
           glUseProgram( shader_program_id );
           
           position_attribute_location = glGetAttribLocation ( shader_program_id, "aPosition" );
+          colour_attribute_location   = glGetAttribLocation ( shader_program_id, "aColour" );
           mvp_uniform_location        = glGetUniformLocation( shader_program_id, "uMVP" );
-          
           
           // load the vertex data
           GLCall( glEnableVertexAttribArray( position_attribute_location ) );
+          GLCall( glEnableVertexAttribArray( colour_attribute_location ) );
           
           f32 aspectRatio = ( f32 ) sdl_params.window_width / ( f32 ) sdl_params.window_height;
           
@@ -146,13 +137,26 @@ void init_program() {
     if ( glb_loaded ) {
       
       for ( u32 i = 0; i < mesh_count; i++ ) {
+        
+        y_rotation += 1.0f;
+        while ( y_rotation > 360.0f ) {
+          y_rotation -= 360.0f;
+        }
+        
+        model = glm::mat4( 1.0f );
+        float angle = glm::radians( y_rotation ); // Convert degrees to radians
+        model = glm::rotate( model, angle, glm::vec3( 0.0f, 1.0f, 0.0f ) );
+        mvp = projection * view * model;
+        
         glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[0][0] );
         
         GLsizei       index_count_for_mesh    = ( GLsizei )       entity_class -> get_index_count( i );
         const GLvoid* index_offset_in_buffer  = ( const GLvoid* ) entity_class -> get_index_offset_in_gl( i );
-        const GLvoid* pointer                 = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl( i );
+        const GLvoid* pointer_positions       = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl( i, "VERTEX" );
+        const GLvoid* pointer_colours         = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl( i, "COLOR0" );
         
-        GLCall( glVertexAttribPointer( position_attribute_location, 3, GL_FLOAT, GL_FALSE, stride, pointer ) );
+        GLCall( glVertexAttribPointer( position_attribute_location, 4, GL_FLOAT, GL_FALSE, stride, pointer_positions ) );
+        GLCall( glVertexAttribPointer( colour_attribute_location  , 4, GL_FLOAT, GL_FALSE, stride, pointer_colours ) );
         GLCall( glDrawElements( GL_TRIANGLES, index_count_for_mesh, GL_UNSIGNED_SHORT, index_offset_in_buffer ) );
         
       }

@@ -32,4 +32,15 @@ const u32 VERTEX_BYTES =
 + ( sizeof( f32 ) * 4 ) // four floats for colour ... r, g, b, a
 ;
 
+enum AccessorType { ACCESSOR_VEC3, ACCESSOR_VEC4, ACCESSOR_VEC2, ACCESSOR_SCALAR };
+
+enum GL_COMPONENT_TYPE {
+    GL_COMPONENT_TYPE_SIGNED_BYTE    = 5120 // 8 bits
+  , GL_COMPONENT_TYPE_UNSIGNED_BYTE  = 5121 // 8 bits
+  , GL_COMPONENT_TYPE_SIGNED_SHORT   = 5122 // 16 bits
+  , GL_COMPONENT_TYPE_UNSIGNED_SHORT = 5123 // 16 bits
+  , GL_COMPONENT_TYPE_UNSIGNED_INT   = 5125 // 32 bits
+  , GL_COMPONENT_TYPE_FLOAT          = 5126 // Signed 32 bits
+};
+
 #endif //TYPES_HPP

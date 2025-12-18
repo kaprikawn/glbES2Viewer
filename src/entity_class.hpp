@@ -8,12 +8,24 @@ struct Mesh {
   u32             vertex_byte_length;
   u32             vertex_count;
   f32*            vertex_data;
+  u32             colour_byte_length = 0;
+  u32             colour_count = 0;
+  f32*            colour_data = NULL;
   u32             index_byte_length;
   u32             index_count;
   u16*            index_data;
   u32             vertex_offset_in_gl_buffer_in_bytes;
   u32             index_offset_in_gl_buffer_in_bytes;
 };
+
+f32 normalize_colour ( u8 value ) {
+  if ( value == 255 ) {
+    return 1.0f;
+  } else if ( value == 0 ) {
+    return 0.0f;
+  }
+  return value * ( 1.0f / 255.0f ); 
+}
 
 class Entity_Class {
   private :
@@ -49,6 +61,16 @@ class Entity_Class {
         f32* dst_f32 = mesh_array[ i ].vertex_data;
         
         f32* glb_vertex_data = glb_imported_object.get_float_data_pointer( i, "VERTEX" );
+        f32* glb_colour0_data = NULL;
+        u32 color_accessor_data_type;
+        
+        bool vertices_have_colours = glb_imported_object.glb_has_colours();
+        if ( vertices_have_colours ) {
+          glb_colour0_data = glb_imported_object.get_colour0_data_pointer( i );
+          
+          color_accessor_data_type = glb_imported_object.get_color_accessor_data_type ( i );
+          
+        }
         
         u32 current_count_loaded = 0;
         
@@ -62,10 +84,37 @@ class Entity_Class {
           *dst_f32++ = 0.0f; // normal z
           *dst_f32++ = 0.0f; // u
           *dst_f32++ = 0.0f; // v
-          *dst_f32++ = 1.0f; // r
-          *dst_f32++ = 1.0f; // g
-          *dst_f32++ = 1.0f; // b
-          *dst_f32++ = 1.0f; // a
+          
+          if ( vertices_have_colours ) {
+            
+            *dst_f32++ = *glb_colour0_data++; // r
+            *dst_f32++ = *glb_colour0_data++; // g
+            *dst_f32++ = *glb_colour0_data++; // b
+            if ( color_accessor_data_type == ACCESSOR_VEC3 ) {
+              *dst_f32++ = 1.0f; // a
+            } else if ( color_accessor_data_type == ACCESSOR_VEC4 ) {
+              *dst_f32++ = 1.0f; // a
+              glb_colour0_data++;
+            } else {
+              SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "ERROR - Unexpected colour datatype\n" );
+            }
+            
+            // u8 this_colour;
+            // this_colour = *glb_colour0_data++;
+            // *dst_f32++  = normalize_colour( this_colour ); // r
+            // this_colour = *glb_colour0_data++;
+            // *dst_f32++  = normalize_colour( this_colour ); // g
+            // this_colour = *glb_colour0_data++;
+            // *dst_f32++  = normalize_colour( this_colour ); // b
+            // this_colour = *glb_colour0_data++;
+            // this_colour = 255;
+            // *dst_f32++  = normalize_colour( this_colour ); // a
+          } else {
+            *dst_f32++ = 1.0f; // r
+            *dst_f32++ = 1.0f; // g
+            *dst_f32++ = 1.0f; // b
+            *dst_f32++ = 1.0f; // a
+          }
         }
         
         u16* glb_index_data = glb_imported_object.get_index_data_pointer( i );
@@ -78,8 +127,8 @@ class Entity_Class {
         // vertex data
         {
           GLenum          target          = GL_ARRAY_BUFFER;
-          GLintptr        offset          = ( GLintptr ) current_gl_array_buffer_offset;
-          GLsizeiptr      size            = ( GLsizeiptr ) vertex_data_bytes;
+          GLintptr        offset          = ( GLintptr )      current_gl_array_buffer_offset;
+          GLsizeiptr      size            = ( GLsizeiptr )    vertex_data_bytes;
           const GLvoid *  data            = ( const GLvoid* ) mesh_array[ i ].vertex_data;
           GLCall( glBufferSubData( target, offset, size, data ) );
         }
@@ -113,8 +162,17 @@ class Entity_Class {
       return mesh_array[ mesh_index ].index_offset_in_gl_buffer_in_bytes;
     }
     
-    u32 get_vertex_offset_in_gl ( u32 mesh_index ) {
-      return mesh_array[ mesh_index ].vertex_offset_in_gl_buffer_in_bytes;
+    u32 get_vertex_offset_in_gl ( u32 mesh_index, const char* type ) {
+      u32 result = 0;
+      
+      if ( strings_are_equal ( type, "VERTEX" ) ) {
+        result = mesh_array[ mesh_index ].vertex_offset_in_gl_buffer_in_bytes;
+      } else if ( strings_are_equal ( type, "COLOR0" ) ) {
+        result = mesh_array[ mesh_index ].vertex_offset_in_gl_buffer_in_bytes;
+        u32 bytes_before_colours = u32 ( sizeof( f32 ) * 9 ); // there are nine floats in the vertex before you get to colour data so we need to offset by that
+        result += bytes_before_colours;
+      }
+      return result;
     }
     
 };
