@@ -5,7 +5,7 @@
 #include "sdl.hpp"
 #include "types.hpp"
 #include "strings.hpp"
-#include "json.hpp"
+#include "json_reader.hpp"
 #include "shaders.hpp"
 #include "../ext/glm/glm.hpp"
 #include "../ext/glm/gtc/matrix_transform.hpp"
