@@ -5,7 +5,7 @@
 #include "sdl.hpp"
 #include "types.hpp"
 #include "strings.hpp"
-#include "json.hpp"
+#include "json_reader.hpp"
 #include "shaders.hpp"
 #include "../ext/glm/glm.hpp"
 #include "../ext/glm/gtc/matrix_transform.hpp"
@@ -120,21 +120,21 @@ class Glb_Mesh_Data {
       return result;
     } 
     
-    void set_buffer_view_data ( const char* json_string, u32 json_char_count ) {
+    void set_buffer_view_data ( nlohmann::json parsed_json ) {
       
-      mesh_position_indices       = get_mesh_position_indices ( mesh_index, json_string, json_char_count );
+      mesh_position_indices       = get_mesh_position_indices ( mesh_index, parsed_json );
       
-      vertex_accessor_data        = get_accessor_data ( mesh_position_indices.vertices, json_string, json_char_count );
-      normal_accessor_data        = get_accessor_data ( mesh_position_indices.normals, json_string, json_char_count );
-      index_accessor_data         = get_accessor_data ( mesh_position_indices.indices, json_string, json_char_count );
-      tex_coord0_accessor_data    = get_accessor_data ( mesh_position_indices.texcoord_0, json_string, json_char_count );
-      colour0_accessor_data       = get_accessor_data ( mesh_position_indices.colour_0, json_string, json_char_count );
+      vertex_accessor_data        = get_accessor_data ( mesh_position_indices.vertices, parsed_json );
+      normal_accessor_data        = get_accessor_data ( mesh_position_indices.normals, parsed_json );
+      index_accessor_data         = get_accessor_data ( mesh_position_indices.indices, parsed_json );
+      tex_coord0_accessor_data    = get_accessor_data ( mesh_position_indices.texcoord_0, parsed_json );
+      colour0_accessor_data       = get_accessor_data ( mesh_position_indices.colour_0, parsed_json );
       
-      vertex_buffer_view_data     = get_buffer_view_data ( vertex_accessor_data.buffer_view, json_string, json_char_count );
-      normal_buffer_view_data     = get_buffer_view_data ( normal_accessor_data.buffer_view, json_string, json_char_count );
-      index_buffer_view_data      = get_buffer_view_data ( index_accessor_data.buffer_view, json_string, json_char_count );
-      tex_coord0_buffer_view_data = get_buffer_view_data ( tex_coord0_accessor_data.buffer_view, json_string, json_char_count );
-      colour0_buffer_view_data     = get_buffer_view_data ( colour0_accessor_data.buffer_view, json_string, json_char_count );
+      vertex_buffer_view_data     = get_buffer_view_data ( vertex_accessor_data.buffer_view, parsed_json );
+      normal_buffer_view_data     = get_buffer_view_data ( normal_accessor_data.buffer_view, parsed_json );
+      index_buffer_view_data      = get_buffer_view_data ( index_accessor_data.buffer_view, parsed_json );
+      tex_coord0_buffer_view_data = get_buffer_view_data ( tex_coord0_accessor_data.buffer_view, parsed_json );
+      colour0_buffer_view_data    = get_buffer_view_data ( colour0_accessor_data.buffer_view, parsed_json );
       
       int g = 4;
     }
@@ -180,8 +180,9 @@ class Glb_imported_object {
     ReadFileResult  glb_file;
     GltfHeader*     gltf_header; // no need to free, points to another pointer
     char*           glb_file_binary_data_pointer; // no need to free, points to another pointer
-    char*           json = NULL;
-    u32             json_bytes;
+    char*           json_header_string = NULL;
+    u32             json_header_bytes;
+    nlohmann::json  parsed_json;
     u32             mesh_count;
     Glb_Mesh_Data*  mesh_data_array;
     u32             vertex_data_total_bytes = 0;
@@ -232,14 +233,18 @@ class Glb_imported_object {
     
     void update_json() {
       u32 this_json_bytes = json_size_in_bytes( &glb_file );
-      json = init_char_star( this_json_bytes + 1 );
-      pull_out_json_string( &glb_file, json, this_json_bytes );
-      json_bytes = this_json_bytes;
+      json_header_string = init_char_star( this_json_bytes + 1 );
+      pull_out_json_string( &glb_file, json_header_string, this_json_bytes );
+      json_header_bytes = this_json_bytes;
+      
+      std::string json_str_temp ( json_header_string );
+      parsed_json = nlohmann::json::parse( json_str_temp );
+      
       int fadsfdasf = 19;
     }
     
     void set_totol_mesh_count () {
-      u32 this_mesh_count = count_meshes ( json, json_bytes );
+      u32 this_mesh_count = count_meshes ( parsed_json );
       mesh_count = this_mesh_count;
     }
     
@@ -269,7 +274,7 @@ class Glb_imported_object {
       
       for ( u32 i = 0; i < mesh_count; i++ ) {
         mesh_data_array[ i ].set_mesh_index ( i );
-        mesh_data_array[ i ].set_buffer_view_data ( json, json_bytes );
+        mesh_data_array[ i ].set_buffer_view_data ( parsed_json);
         mesh_data_array[ i ].populate_mesh_data( glb_file_binary_data_pointer );
         
         u32 this_vertex_count = mesh_data_array[ i ].get_count( "VERTEX" );
