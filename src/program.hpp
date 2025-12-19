@@ -19,6 +19,7 @@ void init_program() {
   glm::mat4 model;
   glm::mat4 mvp;
   GLint     position_attribute_location;
+  GLint     normal_attribute_location;
   GLint     colour_attribute_location;
   GLint     mvp_uniform_location;
   
@@ -94,10 +95,12 @@ void init_program() {
           
           position_attribute_location = glGetAttribLocation ( shader_program_id, "aPosition" );
           colour_attribute_location   = glGetAttribLocation ( shader_program_id, "aColour" );
+          normal_attribute_location   = glGetAttribLocation ( shader_program_id, "aNormal" );
           mvp_uniform_location        = glGetUniformLocation( shader_program_id, "uMVP" );
           
           // load the vertex data
           GLCall( glEnableVertexAttribArray( position_attribute_location ) );
+          GLCall( glEnableVertexAttribArray( normal_attribute_location ) );
           GLCall( glEnableVertexAttribArray( colour_attribute_location ) );
           
           f32 aspectRatio = ( f32 ) sdl_params.window_width / ( f32 ) sdl_params.window_height;
@@ -153,9 +156,11 @@ void init_program() {
         GLsizei       index_count_for_mesh    = ( GLsizei )       entity_class -> get_index_count( i );
         const GLvoid* index_offset_in_buffer  = ( const GLvoid* ) entity_class -> get_index_offset_in_gl( i );
         const GLvoid* pointer_positions       = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl( i, "VERTEX" );
+        const GLvoid* pointer_normals         = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl( i, "NORMAL" );
         const GLvoid* pointer_colours         = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl( i, "COLOR0" );
         
         GLCall( glVertexAttribPointer( position_attribute_location, 4, GL_FLOAT, GL_FALSE, stride, pointer_positions ) );
+        GLCall( glVertexAttribPointer( normal_attribute_location  , 3, GL_FLOAT, GL_FALSE, stride, pointer_normals ) );
         GLCall( glVertexAttribPointer( colour_attribute_location  , 4, GL_FLOAT, GL_FALSE, stride, pointer_colours ) );
         GLCall( glDrawElements( GL_TRIANGLES, index_count_for_mesh, GL_UNSIGNED_SHORT, index_offset_in_buffer ) );
         

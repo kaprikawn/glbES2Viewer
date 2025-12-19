@@ -2,6 +2,7 @@
 #version 100
 
 attribute vec4  aPosition;
+attribute vec3  aNormal;
 attribute vec4  aColour;
 varying   vec4  vColour;
 uniform   mat4  uMVP;

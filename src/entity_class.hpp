@@ -167,6 +167,10 @@ class Entity_Class {
       
       if ( strings_are_equal ( type, "VERTEX" ) ) {
         result = mesh_array[ mesh_index ].vertex_offset_in_gl_buffer_in_bytes;
+      } else if ( strings_are_equal ( type, "NORMAL" ) ) {
+        result = mesh_array[ mesh_index ].vertex_offset_in_gl_buffer_in_bytes;
+        u32 bytes_before_colours = u32 ( sizeof( f32 ) * 4 ); // there are four floats in the vertex before you get to normals data so we need to offset by that
+        result += bytes_before_colours;
       } else if ( strings_are_equal ( type, "COLOR0" ) ) {
         result = mesh_array[ mesh_index ].vertex_offset_in_gl_buffer_in_bytes;
         u32 bytes_before_colours = u32 ( sizeof( f32 ) * 9 ); // there are nine floats in the vertex before you get to colour data so we need to offset by that
