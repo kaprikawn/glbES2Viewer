@@ -48,17 +48,24 @@ class Glb_Mesh_Data {
     
     u32             vertex_byte_length;
     u32             vertex_count;
-    f32*            vertex_data;
+    u32             vertex_datatype = 0xFFFFFFFF;
+    f32*            vertex_data = NULL;
     u32             normal_byte_length;
     u32             normal_count;
-    f32*            normal_data;
+    u32             normal_datatype = 0xFFFFFFFF;
+    f32*            normal_data = NULL;
+    u32             texcoord0_byte_length;
+    u32             texcoord0_count;
+    u32             texcoord0_datatype = 0xFFFFFFFF;
+    f32*            texcoord0_data = NULL;
     u32             colour0_byte_length;
-    u32             colour0_count = 0;
-    f32*            colour0_data;
+    u32             colour0_count   = 0;
     u32             colour_datatype = 0xFFFFFFFF;
+    f32*            colour0_data = NULL;
     u32             index_byte_length;
     u32             index_count;
-    u16*            index_data;
+    u32             index_datatype  = 0xFFFFFFFF;
+    u16*            index_data = NULL;
     
   public : 
     
@@ -71,13 +78,24 @@ class Glb_Mesh_Data {
       byte_offset         = vertex_buffer_view_data.byte_offset;
       vertex_data         = ( f32* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
       
+      normal_byte_length  = normal_buffer_view_data.byte_length;
+      normal_count        = normal_accessor_data.count;
+      byte_offset         = normal_buffer_view_data.byte_offset;
+      normal_data         = ( f32* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
+      
+      texcoord0_byte_length = tex_coord0_buffer_view_data.byte_length;
+      texcoord0_count       = tex_coord0_accessor_data.count;
+      if ( texcoord0_byte_length > 0 && texcoord0_count > 0 ) {
+        has_textures = true;
+        byte_offset     = tex_coord0_buffer_view_data.byte_offset;
+        texcoord0_data  = ( f32* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
+        colour_datatype = get_datatype_from_accessors_string ( tex_coord0_accessor_data.type );
+      }
+      
       colour0_byte_length  = colour0_buffer_view_data.byte_length;
       colour0_count        = colour0_accessor_data.count;
       if ( colour0_count > 0 && colour0_byte_length > 0 ) {
         has_colours = true;
-      }
-      
-      if( has_colours ) {
         byte_offset         = colour0_buffer_view_data.byte_offset;
         colour0_data         = ( f32* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
         colour_datatype     = get_datatype_from_accessors_string ( colour0_accessor_data.type );
@@ -92,10 +110,18 @@ class Glb_Mesh_Data {
         SDL_LogInfo( SDL_LOG_CATEGORY_ERROR, "ERROR - Indices type is not u16 as expected\n" );
       }
       
+      vertex_datatype = get_datatype_from_accessors_string ( vertex_accessor_data.type );
+      normal_datatype = get_datatype_from_accessors_string ( normal_accessor_data.type );
+      index_datatype  = get_datatype_from_accessors_string ( index_accessor_data.type );
+      
     }
     
     bool mesh_has_colours() {
       return has_colours;
+    }
+    
+    bool this_mesh_has_textures() {
+      return has_textures;
     }
     
     u32 get_byte_length ( const char* type ) {
@@ -175,6 +201,8 @@ class Glb_Mesh_Data {
         result = vertex_data;
       } else if ( strings_are_equal ( type, "NORMAL" ) ) {
         result = normal_data;
+      } else if ( strings_are_equal ( type, "TEXCOORD0" ) ) {
+        result = texcoord0_data;
       }
       
       return result;
@@ -369,6 +397,8 @@ class Glb_imported_object {
         result = mesh_data_array[ mesh_index ].get_float_data_pointer( type );
       } else if ( strings_are_equal ( type, "NORMAL" ) ) {
         result = mesh_data_array[ mesh_index ].get_float_data_pointer( type );
+      } else if ( strings_are_equal ( type, "TEXCOORD0" ) ) {
+        result = mesh_data_array[ mesh_index ].get_float_data_pointer( type );
       }
       
       return result;
@@ -384,6 +414,10 @@ class Glb_imported_object {
     
     u32 get_color_accessor_data_type ( u32 mesh_index ) {
       return mesh_data_array[ mesh_index ].get_color_accessor_data_type();
+    }
+    
+    bool mesh_has_textures ( u32 mesh_index ) {
+      return mesh_data_array[ mesh_index ].this_mesh_has_textures();
     }
 };
 

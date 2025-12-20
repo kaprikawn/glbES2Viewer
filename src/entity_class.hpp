@@ -60,8 +60,12 @@ class Entity_Class {
         mesh_array[ i ].index_data  = ( u16* ) malloc ( ( size_t ) index_data_bytes );
         f32* dst_f32 = mesh_array[ i ].vertex_data;
         
-        f32* glb_vertex_data  = glb_imported_object.get_float_data_pointer( i, "VERTEX" );
-        f32* glb_normal_data  = glb_imported_object.get_float_data_pointer( i, "NORMAL" );
+        f32* glb_vertex_data    = glb_imported_object.get_float_data_pointer( i, "VERTEX" );
+        f32* glb_normal_data    = glb_imported_object.get_float_data_pointer( i, "NORMAL" );
+        f32* glb_texcoord0_data = NULL;
+        if ( glb_imported_object.mesh_has_textures( i ) ) {
+          glb_texcoord0_data = glb_imported_object.get_float_data_pointer( i, "TEXCOORD0" );
+        }
         f32* glb_colour0_data = NULL;
         u32 color_accessor_data_type;
         
@@ -80,11 +84,17 @@ class Entity_Class {
           *dst_f32++ = *glb_vertex_data++; // y
           *dst_f32++ = *glb_vertex_data++; // z
           *dst_f32++ = 1.0f; // w
-          *dst_f32++ = 0.0f; // normal x
-          *dst_f32++ = 0.0f; // normal y
-          *dst_f32++ = 0.0f; // normal z
-          *dst_f32++ = 0.0f; // u
-          *dst_f32++ = 0.0f; // v
+          *dst_f32++ = *glb_normal_data++; // normal x
+          *dst_f32++ = *glb_normal_data++; // normal y
+          *dst_f32++ = *glb_normal_data++; // normal z
+          
+          if ( glb_texcoord0_data == NULL ) {
+            *dst_f32++ = 0.0f; // u
+            *dst_f32++ = 0.0f; // v
+          } else {
+            *dst_f32++ = *glb_texcoord0_data++; // u
+            *dst_f32++ = *glb_texcoord0_data++; // v
+          }
           
           if ( vertices_have_colours ) {
             
@@ -99,17 +109,6 @@ class Entity_Class {
             } else {
               SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "ERROR - Unexpected colour datatype\n" );
             }
-            
-            // u8 this_colour;
-            // this_colour = *glb_colour0_data++;
-            // *dst_f32++  = normalize_colour( this_colour ); // r
-            // this_colour = *glb_colour0_data++;
-            // *dst_f32++  = normalize_colour( this_colour ); // g
-            // this_colour = *glb_colour0_data++;
-            // *dst_f32++  = normalize_colour( this_colour ); // b
-            // this_colour = *glb_colour0_data++;
-            // this_colour = 255;
-            // *dst_f32++  = normalize_colour( this_colour ); // a
           } else {
             *dst_f32++ = 1.0f; // r
             *dst_f32++ = 1.0f; // g
