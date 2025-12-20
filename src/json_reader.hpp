@@ -235,4 +235,14 @@ BufferViewData get_buffer_view_data ( u32 target_buffer_view_index, nlohmann::js
 //   return result;
 // }
 
+u32 get_image_buffer_view_index ( nlohmann::json parsed_json ) {
+  u32 result = 0xFFFFFFFF;
+  
+  if ( parsed_json.contains( "images" ) ) {
+    result = parsed_json [ "images" ][ 0 ][ "bufferView" ];
+  }
+  
+  return result;
+}
+
 #endif //JSON_HPP

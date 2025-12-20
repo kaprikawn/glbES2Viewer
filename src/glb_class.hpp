@@ -9,6 +9,8 @@
 #include "shaders.hpp"
 #include "../ext/glm/glm.hpp"
 #include "../ext/glm/gtc/matrix_transform.hpp"
+#define STB_IMAGE_IMPLEMENTATION
+#include "../ext/stb_image.h"
 
 u32 get_datatype_from_accessors_string ( const char* type ) {
   u32 result = 0xFFFFFFFF;
@@ -66,6 +68,8 @@ class Glb_Mesh_Data {
     u32             index_count;
     u32             index_datatype  = 0xFFFFFFFF;
     u16*            index_data = NULL;
+    
+    u32 image_buffer_view;
     
   public : 
     
@@ -167,7 +171,7 @@ class Glb_Mesh_Data {
       if ( mesh_position_indices.texcoord_0_populated ) {
         tex_coord0_accessor_data    = get_accessor_data ( mesh_position_indices.texcoord_0, parsed_json );
         tex_coord0_buffer_view_data = get_buffer_view_data ( tex_coord0_accessor_data.buffer_view, parsed_json );
-        has_textures = true;
+        has_textures                = true;
       } else {
         has_textures = false;
       }
@@ -238,6 +242,8 @@ class Glb_imported_object {
     u32             bin_start_offset        = 0;
     u32             total_vertex_count      = 0;
     u32             total_index_count       = 0;
+    u32             texture_buffer_view     = 0;
+    BufferViewData  texture_buffer_view_data;
     
     bool            has_colours     = false;
     bool            has_textures    = false;
@@ -284,6 +290,7 @@ class Glb_imported_object {
       u32 this_json_bytes = json_size_in_bytes( &glb_file );
       json_header_string = init_char_star( this_json_bytes + 1 );
       pull_out_json_string( &glb_file, json_header_string, this_json_bytes );
+      SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "%s\n", json_header_string );
       json_header_bytes = this_json_bytes;
       
       std::string json_str_temp ( json_header_string );
@@ -376,6 +383,7 @@ class Glb_imported_object {
       update_json();
       set_totol_mesh_count();
       populate_mesh_data();
+      populate_image_data();
       // calculate_data_total_bytes( "VERTEX" );
       // calculate_data_total_bytes( "INDEX" );
       
@@ -388,6 +396,37 @@ class Glb_imported_object {
     u32 get_total_index_count() {
       u32 result = total_index_count;
       return result;
+    }
+    
+    void populate_image_data () {
+        texture_buffer_view = get_image_buffer_view_index ( parsed_json );
+        
+        if ( texture_buffer_view < 0xFFFFFFFF ) {
+          
+          texture_buffer_view_data  = get_buffer_view_data ( texture_buffer_view, parsed_json );
+          u32 byte_offset           = texture_buffer_view_data.byte_offset;
+          uchar* texture_data_raw   = ( uchar* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
+          
+          
+          // don't need to store image data so just upload straight to gl
+          s32             texture_width, texture_height, texture_bpp;
+          u32             image_data_bytes    = texture_buffer_view_data.byte_length;
+          uchar*          texture_data        = stbi_load_from_memory ( texture_data_raw, image_data_bytes, &texture_width, &texture_height, &texture_bpp, 4 );
+          
+          u32 tbos;
+          GLCall( glGenTextures( 1, &tbos ) );
+          GLCall( glBindTexture( GL_TEXTURE_2D, tbos ) );
+          GLCall( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
+          GLCall( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR ) );
+          GLCall( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE ) );
+          GLCall( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE ) );
+          // https://stackoverflow.com/questions/23150123/loading-png-with-stb-image-for-opengl-texture-gives-wrong-colors
+          GLCall( glPixelStorei( GL_UNPACK_ALIGNMENT, 1 ) );
+          GLCall( glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, texture_width, texture_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data ) );
+          GLCall( glBindTexture( GL_TEXTURE_2D, tbos ) );
+          int dfasfdasfdas = 7;
+    
+        }
     }
     
     f32* get_float_data_pointer ( u32 mesh_index, const char* type ) {
