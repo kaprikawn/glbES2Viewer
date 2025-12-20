@@ -60,7 +60,8 @@ class Entity_Class {
         mesh_array[ i ].index_data  = ( u16* ) malloc ( ( size_t ) index_data_bytes );
         f32* dst_f32 = mesh_array[ i ].vertex_data;
         
-        f32* glb_vertex_data = glb_imported_object.get_float_data_pointer( i, "VERTEX" );
+        f32* glb_vertex_data  = glb_imported_object.get_float_data_pointer( i, "VERTEX" );
+        f32* glb_normal_data  = glb_imported_object.get_float_data_pointer( i, "NORMAL" );
         f32* glb_colour0_data = NULL;
         u32 color_accessor_data_type;
         

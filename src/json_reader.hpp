@@ -78,12 +78,15 @@ struct GltfBufferViewInfo {
 };
 
 struct MeshPositionIndices {
-  u32 vertices;
-  u32 normals;
-  u32 texcoord_0;
-  u32 colour_0;
-  u32 indices;
-  u32 material;
+  u32   vertices;
+  u32   normals;
+  u32   texcoord_0;
+  u32   colour_0;
+  u32   indices;
+  u32   material;
+  bool  colour_0_populated    = false;
+  bool  texcoord_0_populated  = false;
+  bool  material_populated    = false;
 };
 
 struct AccessorData {
@@ -166,10 +169,24 @@ MeshPositionIndices get_mesh_position_indices ( u32 target_mesh_index, nlohmann:
   
   result.vertices   = parsed_json[ "meshes" ][ target_mesh_index ][ "primitives" ][ 0 ][ "attributes" ][ "POSITION" ];
   result.normals    = parsed_json[ "meshes" ][ target_mesh_index ][ "primitives" ][ 0 ][ "attributes" ][ "NORMAL" ];
-  result.texcoord_0 = parsed_json[ "meshes" ][ target_mesh_index ][ "primitives" ][ 0 ][ "attributes" ][ "TEXCOORD_0" ];
-  result.colour_0   = parsed_json[ "meshes" ][ target_mesh_index ][ "primitives" ][ 0 ][ "attributes" ][ "COLOR_0" ];
   result.indices    = parsed_json[ "meshes" ][ target_mesh_index ][ "primitives" ][ 0 ][ "indices" ];
-  result.material   = parsed_json[ "meshes" ][ target_mesh_index ][ "primitives" ][ 0 ][ "material" ];
+  
+  nlohmann::json  attributes   = parsed_json [ "meshes" ][ target_mesh_index ][ "primitives" ][ 0 ][ "attributes" ];
+  if ( attributes.contains( "COLOR_0" ) ) {
+    result.colour_0 = parsed_json[ "meshes" ][ target_mesh_index ][ "primitives" ][ 0 ][ "attributes" ][ "COLOR_0" ];
+    result.colour_0_populated = true;
+  }
+  
+  if ( attributes.contains( "TEXCOORD_0" ) ) {
+    result.texcoord_0 = parsed_json[ "meshes" ][ target_mesh_index ][ "primitives" ][ 0 ][ "attributes" ][ "TEXCOORD_0" ];
+    result.texcoord_0_populated = true;
+  }
+  
+  nlohmann::json  primitives   = parsed_json [ "meshes" ][ target_mesh_index ][ "primitives" ][ 0 ];
+  if ( attributes.contains( "material" ) ) {
+    result.material   = parsed_json[ "meshes" ][ target_mesh_index ][ "primitives" ][ 0 ][ "material" ];
+    result.material_populated = true;
+  }
   
   return result;
 }
@@ -197,7 +214,7 @@ AccessorData get_accessor_data ( u32 target_accessor_index, nlohmann::json parse
 
 BufferViewData get_buffer_view_data ( u32 target_buffer_view_index, nlohmann::json parsed_json ) {
   
-  BufferViewData result;
+  BufferViewData result = {};
   
   result.buffer       = parsed_json[ "bufferViews" ][ target_buffer_view_index ][ "buffer" ];
   result.byte_length  = parsed_json[ "bufferViews" ][ target_buffer_view_index ][ "byteLength" ];

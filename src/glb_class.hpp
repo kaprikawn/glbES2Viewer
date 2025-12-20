@@ -30,7 +30,8 @@ class Glb_Mesh_Data {
   
   private : 
     u32                 mesh_index;
-    bool                has_colours = false;
+    bool                has_colours   = false;
+    bool                has_textures  = false;
     GltfBufferViewInfo  gltf_buffer_view_info;
     MeshPositionIndices mesh_position_indices;
     
@@ -48,6 +49,9 @@ class Glb_Mesh_Data {
     u32             vertex_byte_length;
     u32             vertex_count;
     f32*            vertex_data;
+    u32             normal_byte_length;
+    u32             normal_count;
+    f32*            normal_data;
     u32             colour0_byte_length;
     u32             colour0_count = 0;
     f32*            colour0_data;
@@ -99,6 +103,8 @@ class Glb_Mesh_Data {
       
       if ( strings_are_equal ( type, "VERTEX" ) ) {
         result = vertex_buffer_view_data.byte_length;
+      } else if ( strings_are_equal ( type, "NORMAL" ) ) {
+        result = normal_buffer_view_data.byte_length;
       } else if ( strings_are_equal ( type, "INDEX" ) ) {
         result = index_buffer_view_data.byte_length;
       }
@@ -127,19 +133,32 @@ class Glb_Mesh_Data {
       vertex_accessor_data        = get_accessor_data ( mesh_position_indices.vertices, parsed_json );
       normal_accessor_data        = get_accessor_data ( mesh_position_indices.normals, parsed_json );
       index_accessor_data         = get_accessor_data ( mesh_position_indices.indices, parsed_json );
-      tex_coord0_accessor_data    = get_accessor_data ( mesh_position_indices.texcoord_0, parsed_json );
-      colour0_accessor_data       = get_accessor_data ( mesh_position_indices.colour_0, parsed_json );
       
       vertex_buffer_view_data     = get_buffer_view_data ( vertex_accessor_data.buffer_view, parsed_json );
       normal_buffer_view_data     = get_buffer_view_data ( normal_accessor_data.buffer_view, parsed_json );
       index_buffer_view_data      = get_buffer_view_data ( index_accessor_data.buffer_view, parsed_json );
-      tex_coord0_buffer_view_data = get_buffer_view_data ( tex_coord0_accessor_data.buffer_view, parsed_json );
-      colour0_buffer_view_data    = get_buffer_view_data ( colour0_accessor_data.buffer_view, parsed_json );
+      
+      if ( mesh_position_indices.texcoord_0_populated ) {
+        tex_coord0_accessor_data    = get_accessor_data ( mesh_position_indices.texcoord_0, parsed_json );
+        tex_coord0_buffer_view_data = get_buffer_view_data ( tex_coord0_accessor_data.buffer_view, parsed_json );
+        has_textures = true;
+      } else {
+        has_textures = false;
+      }
+      
+      if ( mesh_position_indices.colour_0_populated ) {
+        colour0_accessor_data       = get_accessor_data ( mesh_position_indices.colour_0, parsed_json );
+        colour0_buffer_view_data    = get_buffer_view_data ( colour0_accessor_data.buffer_view, parsed_json );
+        has_colours = true;
+      } else {
+        has_colours = false;
+      }
+      
       
       int g = 4;
     }
     
-    u32 get_binary_offset( const char* type ) {
+    u32 get_binary_offset ( const char* type ) {
       u32 result = 0;
       if ( strings_are_equal( type, "VERTEX" ) ) {
         result = vertex_buffer_view_data.byte_offset;
@@ -154,6 +173,8 @@ class Glb_Mesh_Data {
       
       if ( strings_are_equal ( type, "VERTEX" ) ) {
         result = vertex_data;
+      } else if ( strings_are_equal ( type, "NORMAL" ) ) {
+        result = normal_data;
       }
       
       return result;
@@ -185,14 +206,14 @@ class Glb_imported_object {
     nlohmann::json  parsed_json;
     u32             mesh_count;
     Glb_Mesh_Data*  mesh_data_array;
-    u32             vertex_data_total_bytes = 0;
     u32             index_data_total_bytes  = 0;
     u32             bin_start_offset        = 0;
     u32             total_vertex_count      = 0;
     u32             total_index_count       = 0;
     
-    bool            has_colours = false;
-    bool            has_any_errors = false;
+    bool            has_colours     = false;
+    bool            has_textures    = false;
+    bool            has_any_errors  = false;
     
   public :
     
@@ -286,33 +307,22 @@ class Glb_imported_object {
       }
     }
     
-    void calculate_data_total_bytes ( const char* type ) {
-      u32 result = 0;
-      for ( u32 i = 0; i < mesh_count; i++ ) {
-        u32 this_byte_length = 0;
-        if ( strings_are_equal ( type, "VERTEX" ) ) {
-          this_byte_length = mesh_data_array[ i ].get_byte_length( "VERTEX" );
-        } else if ( strings_are_equal ( type, "INDEX" ) ) {
-          this_byte_length = mesh_data_array[ i ].get_byte_length( "INDEX" );
-        }
-        
-        result += this_byte_length;
-        if ( strings_are_equal ( type, "VERTEX" ) ) {
-          vertex_data_total_bytes = result;
-        } else if ( strings_are_equal ( type, "INDEX" ) ) {
-          index_data_total_bytes = result;
-        }
-      }
-    }
-    
-    u32 get_data_total_bytes ( const char* type ) {
+    u32 get_index_data_total_bytes () {
       
       u32 result = 0;
-      if ( strings_are_equal ( "VERTEX", type ) ) {
-        result = vertex_data_total_bytes;
-      } else if ( strings_are_equal ( "INDEX", type ) ) {
-        result = index_data_total_bytes;
+      
+      if ( index_data_total_bytes > 0 ) {
+        result =  index_data_total_bytes;
+        return result;
       }
+      
+      for ( u32 i = 0; i < mesh_count; i++ ) {
+        u32 this_byte_length = mesh_data_array[ i ].get_byte_length( "INDEX" );;
+        result += this_byte_length;
+      }
+      
+      index_data_total_bytes = result;
+      
       return result;
     }
     
@@ -338,8 +348,8 @@ class Glb_imported_object {
       update_json();
       set_totol_mesh_count();
       populate_mesh_data();
-      calculate_data_total_bytes( "VERTEX" );
-      calculate_data_total_bytes( "INDEX" );
+      // calculate_data_total_bytes( "VERTEX" );
+      // calculate_data_total_bytes( "INDEX" );
       
     }
     
@@ -356,6 +366,8 @@ class Glb_imported_object {
       f32* result = NULL;
       
       if ( strings_are_equal ( type, "VERTEX" ) ) {
+        result = mesh_data_array[ mesh_index ].get_float_data_pointer( type );
+      } else if ( strings_are_equal ( type, "NORMAL" ) ) {
         result = mesh_data_array[ mesh_index ].get_float_data_pointer( type );
       }
       

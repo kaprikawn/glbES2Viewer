@@ -70,7 +70,7 @@ void init_program() {
           GLuint  ibo;
           
           u32  vertex_buffer_size = VERTEX_BYTES * glb_imported_object.get_total_vertex_count();
-          u32  index_buffer_size  = glb_imported_object.get_data_total_bytes( "INDEX" );
+          u32  index_buffer_size  = glb_imported_object.get_index_data_total_bytes();
           
           SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "vertex_buffer_size = %d\n", vertex_buffer_size );
           SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "index_buffer_size = %d\n", index_buffer_size );
