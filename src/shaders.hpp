@@ -147,7 +147,17 @@ void compile_shader_by_type_id ( u32 shader_type_id ) {
   
   char* shader_filename = NULL;
   
-  if ( shader_type_id == SHADER_TYPE_DEBUG ) {
+  if ( shader_type_id == SHADER_TYPE_TEXTURED_LIGHT_PER_VERTEX ) {
+    shader_filename = assets_dir_and_filename( "shaderTexturedLightPerVertex.glsl" );
+  } else if ( shader_type_id == SHADER_TYPE_TEXTURED_LIGHT_PER_FRAGMENT ) {
+    shader_filename = assets_dir_and_filename( "shaderTexturedLightPerFragment.glsl" );
+  } else if ( shader_type_id == SHADER_TYPE_VERTEX_COLOURS_LIGHT_PER_VERTEX ) {
+    shader_filename = assets_dir_and_filename( "shader_VertexColoursLightPerVertex.glsl" );
+  } else if ( shader_type_id == SHADER_TYPE_VERTEX_COLOURS_LIGHT_PER_FRAGMENT ) {
+    shader_filename = assets_dir_and_filename( "shader_VertexColoursLightPerFragment.glsl" );
+  } else if ( shader_type_id == SHADER_TYPE_VERTEX_COLOURS_NO_LIGHT ) {
+    shader_filename = assets_dir_and_filename( "shader_VertexColoursNoLight.glsl" );
+  } else if ( shader_type_id == SHADER_TYPE_DEBUG ) {
     shader_filename = assets_dir_and_filename( "shaderDebug.glsl" );
   }
   

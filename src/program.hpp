@@ -146,11 +146,11 @@ void init_program() {
         
         glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[0][0] );
         
-        GLsizei       index_count_for_mesh    = ( GLsizei )       entity_class -> get_index_count( i );
-        const GLvoid* index_offset_in_buffer  = ( const GLvoid* ) entity_class -> get_index_offset_in_gl( i );
-        const GLvoid* pointer_positions       = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl( i, "VERTEX" );
-        const GLvoid* pointer_normals         = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl( i, "NORMAL" );
-        const GLvoid* pointer_colours         = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl( i, "COLOR0" );
+        GLsizei       index_count_for_mesh    = ( GLsizei )       entity_class -> get_index_count ( i );
+        const GLvoid* index_offset_in_buffer  = ( const GLvoid* ) entity_class -> get_index_offset_in_gl ( i );
+        const GLvoid* pointer_positions       = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl ( i, "VERTEX" );
+        const GLvoid* pointer_normals         = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl ( i, "NORMAL" );
+        const GLvoid* pointer_colours         = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl ( i, "COLOR0" );
         
         GLCall( glVertexAttribPointer( position_attribute_location, 4, GL_FLOAT, GL_FALSE, stride, pointer_positions ) );
         GLCall( glVertexAttribPointer( normal_attribute_location  , 3, GL_FLOAT, GL_FALSE, stride, pointer_normals ) );
