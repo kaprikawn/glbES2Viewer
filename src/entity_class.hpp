@@ -2,6 +2,7 @@
 #define ENTITY_CLASS_HPP
 
 #include "glb_class.hpp"
+#include "shaders.hpp"
 #include "types.hpp"
 
 struct Mesh {
@@ -16,6 +17,7 @@ struct Mesh {
   u16*            index_data;
   u32             vertex_offset_in_gl_buffer_in_bytes;
   u32             index_offset_in_gl_buffer_in_bytes;
+  u32             shader_data_index = 0xFFFFFFFF;
 };
 
 f32 normalize_colour ( u8 value ) {
@@ -27,12 +29,43 @@ f32 normalize_colour ( u8 value ) {
   return value * ( 1.0f / 255.0f ); 
 }
 
+enum Shader_Data_Types {
+    SHADER_DATA_TYPE_POSITIONS
+  , SHADER_DATA_TYPE_NORMALS
+  , SHADER_DATA_TYPE_COLOURS
+  , SHADER_DATA_TYPE_MVP
+};
+
 class Entity_Class {
   private :
     u32             mesh_count = 0xFFFFFFFF;
     Mesh*           mesh_array;
+    bool            has_texture = false;
     
   public : 
+    
+    u32 calculate_shader_type ( Mesh* this_mesh ) {
+      // figure out what shader we're going to use for this mesh
+      
+      u32 result = 0xFFFFFFFF;
+      
+      if ( this_mesh -> colour_count == 0 ) {
+        if ( has_texture ) {
+          result = SHADER_TYPE_TEXTURED_LIGHT_PER_VERTEX;
+        } else {
+          result = SHADER_TYPE_DEBUG;
+        }
+      } else {
+        result = SHADER_TYPE_VERTEX_COLOURS_NO_LIGHT;
+      }
+      
+      result = SHADER_TYPE_DEBUG;
+      
+      this_mesh -> shader_data_index = result;
+      compile_shader_by_type_id ( result );
+      
+      return result;
+    }
     
     // constructor - transfer data across from the glb object
     Entity_Class( Glb_imported_object glb_imported_object ) {
@@ -69,7 +102,7 @@ class Entity_Class {
         f32* glb_colour0_data = NULL;
         u32 color_accessor_data_type;
         
-        bool vertices_have_colours = glb_imported_object.glb_has_colours();
+        bool vertices_have_colours = glb_imported_object.glb_mesh_has_colours( i );
         if ( vertices_have_colours ) {
           glb_colour0_data = glb_imported_object.get_colour0_data_pointer( i );
           
@@ -145,6 +178,8 @@ class Entity_Class {
         
         current_gl_array_buffer_offset          += vertex_data_bytes;
         current_gl_element_array_buffer_offset  += index_data_bytes;
+        
+        mesh_array [ i ].shader_data_index = calculate_shader_type( &mesh_array[ i ] );
       }
       
       int dafsdasfdsfdas = 87;
@@ -178,6 +213,35 @@ class Entity_Class {
       }
       return result;
     }
+    
+    u32 get_program_id_for_mesh_index ( u32 mesh_index ) {
+      u32 result = 0xFFFFFFFF;
+      
+      u32 this_shader_type_index = mesh_array [ mesh_index ].shader_data_index;
+      
+      result = shader_data [ this_shader_type_index ].shader_id;
+      
+      return result;
+    }
+    
+    s32 get_shader_data_for_mesh_index ( u32 mesh_index, u32 shader_data_type ) {
+      
+      s32 result = -1;
+      
+      u32 shader_data_index = mesh_array [ mesh_index ].shader_data_index;
+      
+      if ( shader_data_type == SHADER_DATA_TYPE_POSITIONS ) {
+        result = shader_data [ shader_data_index ].position_attribute_location;
+      } else if ( shader_data_type == SHADER_DATA_TYPE_NORMALS ) {
+        result = shader_data [ shader_data_index ].normal_attribute_location;
+      } else if ( shader_data_type == SHADER_DATA_TYPE_COLOURS ) {
+        result = shader_data [ shader_data_index ].colour_attribute_location;
+      } else if ( shader_data_type == SHADER_DATA_TYPE_MVP ) {
+        result = shader_data [ shader_data_index ].mvp_uniform_location;
+      }
+      
+      return result;
+    }  
     
 };
 

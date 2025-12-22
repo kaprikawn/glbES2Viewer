@@ -175,6 +175,8 @@ MeshPositionIndices get_mesh_position_indices ( u32 target_mesh_index, nlohmann:
   if ( attributes.contains( "COLOR_0" ) ) {
     result.colour_0 = parsed_json[ "meshes" ][ target_mesh_index ][ "primitives" ][ 0 ][ "attributes" ][ "COLOR_0" ];
     result.colour_0_populated = true;
+  } else {
+    result.colour_0_populated = false;
   }
   
   if ( attributes.contains( "TEXCOORD_0" ) ) {

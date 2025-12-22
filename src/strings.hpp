@@ -11,10 +11,10 @@ enum ascii_chars { ASCII_NUL, ASCII_SOH, ASCII_STX, ASCII_ETX, ASCII_EOT, ASCII_
 
 struct ReadFileResult {
   u32   contents_size;
-  void* contents;
+  void* contents = NULL;
 };
 
-inline u32 string_length( const char* string ) {
+inline u32 string_length ( const char* string ) {
   // length NOT including \0
   u32 result = 0;
   for( u32 i = 0; string[ i ] != '\0'; i++ )
@@ -22,25 +22,25 @@ inline u32 string_length( const char* string ) {
   return result;
 }
 
-inline void null_char_buffer( char* target, u32 length ) {
+inline void null_char_buffer ( char* target, u32 length ) {
   // TODO : replace with memset?
   for( u32 i = 0; i < length; i++ ) {
     target[ i ] = '\0';
   }
 }
 
-inline char* init_char_star( u32 length ) {
+inline char* init_char_star ( u32 length ) {
   char* result = ( char* )malloc( length );
   null_char_buffer( result, length );
   return result;
 }
 
-inline void copy_string_into_char_star( const char* src, char* dest, u32 length ) {
+inline void copy_string_into_char_star ( const char* src, char* dest, u32 length ) {
   for( u32 i = 0; i < length; i++ )
     dest[ i ] = src[ i ];
 }
 
-inline void remove_crlf( ReadFileResult* read_file_result ) {
+inline void remove_crlf ( ReadFileResult* read_file_result ) {
   
   uchar* this_char = ( uchar* ) read_file_result -> contents;
   
@@ -111,7 +111,7 @@ bool32 strings_are_equal( const char* str1, const char* str2 ) {
 
 #include <shlwapi.h>
 
-inline u32 get_filesize( const char* filepath ) {
+inline u32 get_filesize ( const char* filepath ) {
   u32 result = 0;
   LARGE_INTEGER filesize;
   HANDLE fh = CreateFileA( filepath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0 );
@@ -125,7 +125,7 @@ inline u32 get_filesize( const char* filepath ) {
   return result;
 }
 
-inline ReadFileResult read_entire_file( const char* filepath ) {
+inline ReadFileResult read_entire_file ( const char* filepath ) {
   
   ReadFileResult result = {};
   
@@ -148,7 +148,7 @@ inline ReadFileResult read_entire_file( const char* filepath ) {
   return result;
 }
 
-void read_entire_file_into_memory( const char* filepath, ReadFileResult* result ) {
+void read_entire_file_into_memory ( const char* filepath, ReadFileResult* result ) {
   
   HANDLE fh = CreateFileA( filepath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0 );
   
@@ -157,7 +157,7 @@ void read_entire_file_into_memory( const char* filepath, ReadFileResult* result 
     return;
   }
   
-  result -> contents_size = get_filesize( filepath );
+  result -> contents_size = get_filesize ( filepath );
   
   result -> contents = VirtualAlloc( 0, result -> contents_size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE );
   
@@ -173,11 +173,17 @@ void read_entire_file_into_memory( const char* filepath, ReadFileResult* result 
   CloseHandle( fh );
 }
 
-void free_memory( void* memory, u32 size ) {
-  VirtualFree( ( LPVOID )memory, size, MEM_RELEASE );
+void free_memory ( void* memory, u32 size ) {
+  VirtualFree ( ( LPVOID ) memory, size, MEM_RELEASE );
 }
 
-bool32 fileExists( const char* filepath ) {
+void free_read_file_result ( ReadFileResult* read_file_result ) {
+  if ( read_file_result -> contents != NULL ) {
+    free_memory ( read_file_result -> contents, read_file_result -> contents_size );
+  }
+}
+
+bool32 fileExists ( const char* filepath ) {
   bool32 result = false;
   int retval;
   retval = PathFileExistsA( ( char* )filepath );
@@ -193,7 +199,7 @@ bool32 fileExists( const char* filepath ) {
 #include <fcntl.h>
 #include <unistd.h>
 
-bool fileExists( const char* filepath ) {
+bool fileExists ( const char* filepath ) {
   if( FILE *file = fopen( filepath, "r" ) ) {
     fclose( file );
     return true;
@@ -202,14 +208,14 @@ bool fileExists( const char* filepath ) {
   return false;
 }
 
-inline u32 get_filesize( const char* filepath ) {
+inline u32 get_filesize ( const char* filepath ) {
   u32 result = 0;
   // TODO
   return result;
 }
 
 
-ReadFileResult read_entire_file( const char* filepath ) {
+ReadFileResult read_entire_file ( const char* filepath ) {
   
   ReadFileResult result = {};
   if( !fileExists( filepath ) ) {
@@ -259,6 +265,12 @@ ReadFileResult read_entire_file( const char* filepath ) {
 
 void free_memory( void* memory, u32 size ) {
   // TODO
+}
+
+void free_read_file_result ( ReadFileResult* read_file_result ) {
+  if ( read_file_result -> contents != NULL ) {
+    free_memory ( read_file_result -> contents, read_file_result -> contents_size );
+  }
 }
 
 #endif

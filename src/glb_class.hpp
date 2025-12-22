@@ -103,6 +103,8 @@ class Glb_Mesh_Data {
         byte_offset         = colour0_buffer_view_data.byte_offset;
         colour0_data         = ( f32* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
         colour_datatype     = get_datatype_from_accessors_string ( colour0_accessor_data.type );
+      } else {
+        has_colours = false;
       }
       
       index_byte_length   = index_buffer_view_data.byte_length;
@@ -245,7 +247,6 @@ class Glb_imported_object {
     u32             texture_buffer_view     = 0;
     BufferViewData  texture_buffer_view_data;
     
-    bool            has_colours     = false;
     bool            has_textures    = false;
     bool            has_any_errors  = false;
     
@@ -268,8 +269,8 @@ class Glb_imported_object {
       
     }
     
-    bool glb_has_colours() {
-      return mesh_data_array[0].mesh_has_colours();
+    bool glb_mesh_has_colours( u32 mesh_index ) {
+      return mesh_data_array [ mesh_index ].mesh_has_colours();
     }
     
     void read_file_offsets () {
