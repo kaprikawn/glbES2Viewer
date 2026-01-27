@@ -387,6 +387,7 @@ class Glb_imported_object {
           }
         }
         set_total_mesh_count ( ( mesh_count - collider_count ) );
+        free ( old_data );
       }
     }
     
@@ -411,11 +412,11 @@ class Glb_imported_object {
     
     bool is_glb_file () {
       bool result = false;
-      
       if ( gltf_header -> magic == 1179937895 ) {
         result = true;
+      } else {
+        SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "File is not a glb file\n" );
       }
-      // @TODO : add error message
       return result;
     }
     

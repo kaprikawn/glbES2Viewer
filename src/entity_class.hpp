@@ -33,6 +33,7 @@ enum Shader_Data_Types {
     SHADER_DATA_TYPE_POSITIONS
   , SHADER_DATA_TYPE_NORMALS
   , SHADER_DATA_TYPE_COLOURS
+  , SHADER_DATA_TYPE_TEXCOORD0
   , SHADER_DATA_TYPE_MVP
 };
 
@@ -68,7 +69,7 @@ class Entity_Class {
     }
     
     // constructor - transfer data across from the glb object
-    Entity_Class( Glb_imported_object glb_imported_object ) {
+    Entity_Class ( Glb_imported_object glb_imported_object ) {
       
       u32 current_gl_array_buffer_offset          = 0;
       u32 current_gl_element_array_buffer_offset  = 0;
@@ -79,6 +80,8 @@ class Entity_Class {
       for ( u32 i = 0; i < mesh_count; i++ ) {
         u32 this_vertex_count = glb_imported_object.get_mesh_element_count( i, "VERTEX" );
         u32 this_index_count  = glb_imported_object.get_mesh_element_count( i, "INDEX" );
+        
+        u32 this_shader_data_index = mesh_array[ i ].shader_data_index;
         
         mesh_array[ i ].vertex_byte_length  = glb_imported_object.get_mesh_byte_length( i, "VERTEX" );
         mesh_array[ i ].index_byte_length   = glb_imported_object.get_mesh_byte_length( i, "INDEX" );
@@ -96,19 +99,17 @@ class Entity_Class {
         f32* glb_vertex_data    = glb_imported_object.get_float_data_pointer( i, "VERTEX" );
         f32* glb_normal_data    = glb_imported_object.get_float_data_pointer( i, "NORMAL" );
         f32* glb_texcoord0_data = NULL;
-        if ( glb_imported_object.mesh_has_textures( i ) ) {
-          glb_texcoord0_data = glb_imported_object.get_float_data_pointer( i, "TEXCOORD0" );
-          has_texture = true;
+        if ( shader_data[ this_shader_data_index ].has_texture ) {
+          glb_texcoord0_data  = glb_imported_object.get_float_data_pointer( i, "TEXCOORD0" );
+          has_texture         = true;
         }
         f32* glb_colour0_data = NULL;
         u32 color_accessor_data_type;
         
-        bool vertices_have_colours = glb_imported_object.glb_mesh_has_colours( i );
+        bool vertices_have_colours = shader_data[ this_shader_data_index ].has_colours;
         if ( vertices_have_colours ) {
-          glb_colour0_data = glb_imported_object.get_colour0_data_pointer( i );
-          
-          color_accessor_data_type = glb_imported_object.get_color_accessor_data_type ( i );
-          
+          glb_colour0_data          = glb_imported_object.get_colour0_data_pointer( i );
+          color_accessor_data_type  = glb_imported_object.get_color_accessor_data_type ( i );
         }
         
         u32 current_count_loaded = 0;
@@ -237,6 +238,8 @@ class Entity_Class {
         result = shader_data [ shader_data_index ].normal_attribute_location;
       } else if ( shader_data_type == SHADER_DATA_TYPE_COLOURS ) {
         result = shader_data [ shader_data_index ].colour_attribute_location;
+      } else if ( shader_data_type == SHADER_DATA_TYPE_TEXCOORD0 ) {
+        result = shader_data [ shader_data_index ].texcoord0_attribute_location;
       } else if ( shader_data_type == SHADER_DATA_TYPE_MVP ) {
         result = shader_data [ shader_data_index ].mvp_uniform_location;
       }

@@ -5,11 +5,16 @@
 #include "strings.hpp"
 
 struct Shader_Data {
-  u32 shader_id = 0xFFFFFFFF; // referred to as 'program' in docs
-  s32 position_attribute_location;
-  s32 normal_attribute_location;
-  s32 colour_attribute_location;
-  s32 mvp_uniform_location;
+  u32   shader_id = 0xFFFFFFFF; // referred to as 'program' in docs
+  s32   position_attribute_location;
+  s32   normal_attribute_location;
+  s32   colour_attribute_location;
+  s32   texcoord0_attribute_location;
+  s32   mvp_uniform_location;
+  bool  has_normals   = false;
+  bool  has_texture   = false;
+  bool  has_colours   = false;
+  bool  uses_lighting = false;
 };
 
 enum Shader_Types {
@@ -24,7 +29,7 @@ enum Shader_Types {
 
 const u32 shader_types_num_values = SHADER_TYPE_NUM_VALUES;
 
-Shader_Data shader_data [ shader_types_num_values ];
+Shader_Data       shader_data [ shader_types_num_values ];
 
 u32 compile_shader ( u32 type, const char* source ) {
   
@@ -64,16 +69,15 @@ u32 create_shader ( ReadFileResult shader_file ) {
   
   u32 type = SHADERTYPENONE;
   
-  char* vertex_shader_source    = ( char* )malloc( filesize_max );
-  char* fragment_shader_source  = ( char* )malloc( filesize_max );
+  char* vertex_shader_source    = ( char* ) malloc ( filesize_max );
+  char* fragment_shader_source  = ( char* ) malloc ( filesize_max );
   char  current_line [ 4086 ];
   
-  u32 current_line_index     = 0;
-  u32 line_start            = 0;
-  u32 line_end;
-  
-  u32 vertex_current_index   = 0;
-  u32 fragment_current_index = 0;
+  u32 current_line_index      = 0;
+  u32 line_start              = 0;
+  u32 line_end                = 0;
+  u32 vertex_current_index    = 0;
+  u32 fragment_current_index  = 0;
   
   for( u32 i = 0; i < filesize_max; i++ ) {
     char my_char = ( char )shader_source[ i ];
@@ -81,25 +85,25 @@ u32 create_shader ( ReadFileResult shader_file ) {
       
       line_end = i;
       
-      if( strings_are_equal( ( const char* )current_line, "#shader vertex" ) ) {
+      if ( strings_are_equal ( ( const char* ) current_line, "#shader vertex" ) ) {
         type = VERTEXSHADER;
-      } else if( strings_are_equal( ( const char* )current_line, "#shader fragment" ) ) {
+      } else if ( strings_are_equal ( ( const char* ) current_line, "#shader fragment" ) ) {
         type = FRAGMENTSHADER;
       } else {
         
         for( u32 j = line_start; j < line_end; j++ ) {
           
-          if( type == VERTEXSHADER ) {
-            vertex_shader_source[ vertex_current_index++ ] = ( char )shader_source[ j ];
-          } else if( type == FRAGMENTSHADER ) {
-            fragment_shader_source[ fragment_current_index++ ] = ( char )shader_source[ j ];
+          if ( type == VERTEXSHADER ) {
+            vertex_shader_source[ vertex_current_index++ ] = ( char ) shader_source[ j ];
+          } else if ( type == FRAGMENTSHADER ) {
+            fragment_shader_source[ fragment_current_index++ ] = ( char ) shader_source[ j ];
           }
           
         }
         
-        if( type == VERTEXSHADER ) {
+        if ( type == VERTEXSHADER ) {
           vertex_shader_source[ vertex_current_index++ ] = 0x0a;
-        } else if( type == FRAGMENTSHADER ) {
+        } else if ( type == FRAGMENTSHADER ) {
           fragment_shader_source[ fragment_current_index++ ] = 0x0a;
         }
       }
@@ -146,20 +150,43 @@ void compile_shader_by_type_id ( u32 shader_type_id ) {
   }
   
   char* shader_filename = NULL;
+  bool  has_normals     = false;
+  bool  has_texture     = false;
+  bool  has_colours     = false;
+  bool  uses_lighting   = false;
+  
   
   if ( shader_type_id == SHADER_TYPE_TEXTURED_LIGHT_PER_VERTEX ) {
-    shader_filename = assets_dir_and_filename( "shaderTexturedLightPerVertex.glsl" );
+    shader_filename = assets_dir_and_filename ( "shaderTexturedLightPerVertex.glsl" );
+    has_normals     = true;
+    has_texture     = true;
+    uses_lighting   = true;
   } else if ( shader_type_id == SHADER_TYPE_TEXTURED_LIGHT_PER_FRAGMENT ) {
-    shader_filename = assets_dir_and_filename( "shaderTexturedLightPerFragment.glsl" );
+    shader_filename = assets_dir_and_filename ( "shaderTexturedLightPerFragment.glsl" );
+    has_normals     = true;
+    has_texture     = true;
+    uses_lighting   = true;
   } else if ( shader_type_id == SHADER_TYPE_VERTEX_COLOURS_LIGHT_PER_VERTEX ) {
-    shader_filename = assets_dir_and_filename( "shader_VertexColoursLightPerVertex.glsl" );
+    shader_filename = assets_dir_and_filename ( "shader_VertexColoursLightPerVertex.glsl" );
+    has_normals     = true;
+    has_colours     = true;
+    uses_lighting   = true;
   } else if ( shader_type_id == SHADER_TYPE_VERTEX_COLOURS_LIGHT_PER_FRAGMENT ) {
-    shader_filename = assets_dir_and_filename( "shader_VertexColoursLightPerFragment.glsl" );
+    shader_filename = assets_dir_and_filename ( "shader_VertexColoursLightPerFragment.glsl" );
+    has_normals     = true;
+    has_colours     = true;
+    uses_lighting   = true;
   } else if ( shader_type_id == SHADER_TYPE_VERTEX_COLOURS_NO_LIGHT ) {
-    shader_filename = assets_dir_and_filename( "shader_VertexColoursNoLight.glsl" );
+    shader_filename = assets_dir_and_filename ( "shader_VertexColoursNoLight.glsl" );
+    has_colours     = true;
   } else if ( shader_type_id == SHADER_TYPE_DEBUG ) {
-    shader_filename = assets_dir_and_filename( "shaderDebug.glsl" );
+    shader_filename = assets_dir_and_filename ( "shaderDebug.glsl" );
   }
+  
+  shader_data [ shader_type_id ].has_normals   = has_normals;
+  shader_data [ shader_type_id ].has_texture   = has_texture;
+  shader_data [ shader_type_id ].has_colours   = has_colours;
+  shader_data [ shader_type_id ].uses_lighting = uses_lighting;
   
   if ( shader_filename == NULL ) {
     
@@ -170,19 +197,22 @@ void compile_shader_by_type_id ( u32 shader_type_id ) {
     
     shader_data [ shader_type_id ].shader_id = shader_program_id;
     
-    s32 position_attribute_location = glGetAttribLocation ( shader_program_id, "aPosition" );
-    s32 normal_attribute_location   = glGetAttribLocation ( shader_program_id, "aNormal" );
-    s32 colour_attribute_location   = glGetAttribLocation ( shader_program_id, "aColour" );
-    s32 mvp_uniform_location        = glGetUniformLocation ( shader_program_id, "uMVP" );
+    s32 position_attribute_location   = glGetAttribLocation ( shader_program_id, "aPosition" );
+    s32 normal_attribute_location     = glGetAttribLocation ( shader_program_id, "aNormal" );
+    s32 colour_attribute_location     = glGetAttribLocation ( shader_program_id, "aColour" );
+    s32 texcoord0_attribute_location  = glGetAttribLocation ( shader_program_id, "aTexCoord" );
+    s32 mvp_uniform_location          = glGetUniformLocation( shader_program_id, "uMVP" );
     
-    shader_data [ shader_type_id ].position_attribute_location = position_attribute_location;
-    shader_data [ shader_type_id ].normal_attribute_location   = normal_attribute_location;
-    shader_data [ shader_type_id ].colour_attribute_location   = colour_attribute_location;
-    shader_data [ shader_type_id ].mvp_uniform_location        = mvp_uniform_location;
+    shader_data [ shader_type_id ].position_attribute_location  = position_attribute_location;
+    shader_data [ shader_type_id ].normal_attribute_location    = normal_attribute_location;
+    shader_data [ shader_type_id ].colour_attribute_location    = colour_attribute_location;
+    shader_data [ shader_type_id ].texcoord0_attribute_location = texcoord0_attribute_location;
+    shader_data [ shader_type_id ].mvp_uniform_location         = mvp_uniform_location;
     
     GLCall( glEnableVertexAttribArray( position_attribute_location ) );
     GLCall( glEnableVertexAttribArray( normal_attribute_location ) );
     GLCall( glEnableVertexAttribArray( colour_attribute_location ) );
+    GLCall( glEnableVertexAttribArray( texcoord0_attribute_location ) );
     
     free_read_file_result ( &shader_file );
     free ( shader_filename );

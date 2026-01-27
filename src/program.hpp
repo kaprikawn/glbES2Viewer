@@ -32,8 +32,9 @@ void init_program() {
   u32     mesh_count = 0;
   u32     current_offset_in_gl_array_buffer         = 0;
   u32     current_offset_in_gl_element_array_buffer = 0;
+  f32     light_position [ 3 ]                      = { 0.0f, 20.0f, 0.0f };
   Entity_Class* entity_class = NULL;
-  GLsizei stride = GLsizei( 13 * sizeof( f32 ) ); // 13 floats per vertex
+  GLsizei       stride = GLsizei( 13 * sizeof( f32 ) ); // 13 floats per vertex
   
   f32     y_rotation = 0;
   
@@ -123,10 +124,11 @@ void init_program() {
       
       for ( u32 i = 0; i < mesh_count; i++ ) {
         
-        s32 position_attribute_location = entity_class -> get_shader_data_for_mesh_index ( i, SHADER_DATA_TYPE_POSITIONS );
-        s32 colour_attribute_location   = entity_class -> get_shader_data_for_mesh_index ( i, SHADER_DATA_TYPE_COLOURS );
-        s32 normal_attribute_location   = entity_class -> get_shader_data_for_mesh_index ( i, SHADER_DATA_TYPE_NORMALS );
-        s32 mvp_uniform_location        = entity_class -> get_shader_data_for_mesh_index ( i, SHADER_DATA_TYPE_MVP );
+        s32 position_attribute_location   = entity_class -> get_shader_data_for_mesh_index ( i, SHADER_DATA_TYPE_POSITIONS );
+        s32 colour_attribute_location     = entity_class -> get_shader_data_for_mesh_index ( i, SHADER_DATA_TYPE_COLOURS );
+        s32 normal_attribute_location     = entity_class -> get_shader_data_for_mesh_index ( i, SHADER_DATA_TYPE_NORMALS );
+        s32 texcoord0_attribute_location  = entity_class -> get_shader_data_for_mesh_index ( i, SHADER_DATA_TYPE_TEXCOORD0 );
+        s32 mvp_uniform_location          = entity_class -> get_shader_data_for_mesh_index ( i, SHADER_DATA_TYPE_MVP );
         
         y_rotation += 1.0f;
         while ( y_rotation > 360.0f ) {
@@ -151,6 +153,7 @@ void init_program() {
         const GLvoid* pointer_positions       = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl ( i, "VERTEX" );
         const GLvoid* pointer_normals         = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl ( i, "NORMAL" );
         const GLvoid* pointer_colours         = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl ( i, "COLOR0" );
+        const GLvoid* pointer_texcoord0       = ( const GLvoid* ) entity_class -> get_vertex_offset_in_gl ( i, "TEXCOORD0" );
         
         GLCall( glVertexAttribPointer( position_attribute_location, 4, GL_FLOAT, GL_FALSE, stride, pointer_positions ) );
         GLCall( glVertexAttribPointer( normal_attribute_location  , 3, GL_FLOAT, GL_FALSE, stride, pointer_normals ) );
