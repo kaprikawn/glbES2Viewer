@@ -126,7 +126,7 @@ inline void pull_out_json_string ( ReadFileResult* gltf_file, char* json_string,
   u8          file_header_size_in_bytes = 12; // magic + version + length
   u8          json_header_size_in_bytes = 8; // 4 bytes for chunk length, 4 bytes for chunk type
   u32         jsonCurrentIndex          = 0;
-  const char* json_data = ( char* )( ( u8* )gltf_file -> contents + file_header_size_in_bytes + json_header_size_in_bytes );
+  const char* json_data = ( char* )( ( u8* ) gltf_file -> contents + file_header_size_in_bytes + json_header_size_in_bytes );
   for( u32 i = 0; i < json_string_length; i++ ) {
     json_string[ jsonCurrentIndex++ ] = json_data[ i ];
   }
@@ -136,6 +136,20 @@ inline void pull_out_json_string ( ReadFileResult* gltf_file, char* json_string,
       break;
     json_string[ i ] = '\0'; // make sure there's no erroneous padding bits at the end of the json, set to \0 if so
   }
+}
+
+u32 get_mesh_number_from_nodes ( nlohmann::json  parsed_json, u32 node_index ) {
+  u32 result = parsed_json [ "nodes" ][ node_index ][ "mesh" ];
+  return result;
+}
+
+bool mesh_is_collider ( nlohmann::json  parsed_json, u32 node_index ) {
+  bool result = false;
+  std::string mesh_name = parsed_json [ "nodes" ][ node_index ][ "name" ];
+  if ( strings_are_equal ( "Collider", mesh_name.c_str() ) ) {
+    result = true;
+  }
+  return result;
 }
 
 u32 count_meshes ( nlohmann::json  parsed_json ) {

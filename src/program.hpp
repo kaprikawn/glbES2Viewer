@@ -71,7 +71,7 @@ void init_program() {
           u32  index_buffer_size  = glb_imported_object.get_index_data_total_bytes();
           
           SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "vertex_buffer_size = %d\n", vertex_buffer_size );
-          SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "index_buffer_size = %d\n", index_buffer_size );
+          SDL_LogInfo( SDL_LOG_CATEGORY_APPLICATION, "index_buffer_size  = %d\n", index_buffer_size );
           
           // set up gl buffers
           GLCall( glGenBuffers( 1, &vbo ) );
@@ -139,12 +139,12 @@ void init_program() {
           program_id_currently_in_use = program_id_for_this_mesh;
         }
         
-        model = glm::mat4( 1.0f );
-        float angle = glm::radians( y_rotation ); // Convert degrees to radians
-        model = glm::rotate( model, angle, glm::vec3( 0.0f, 1.0f, 0.0f ) );
+        model = glm::mat4 ( 1.0f );
+        float angle = glm::radians ( y_rotation ); // Convert degrees to radians
+        model = glm::rotate ( model, angle, glm::vec3( 0.0f, 1.0f, 0.0f ) );
         mvp = projection * view * model;
         
-        glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[0][0] );
+        glUniformMatrix4fv( mvp_uniform_location, 1, GL_FALSE, &mvp[ 0 ][ 0 ] );
         
         GLsizei       index_count_for_mesh    = ( GLsizei )       entity_class -> get_index_count ( i );
         const GLvoid* index_offset_in_buffer  = ( const GLvoid* ) entity_class -> get_index_offset_in_gl ( i );

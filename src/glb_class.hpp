@@ -34,6 +34,7 @@ class Glb_Mesh_Data {
     u32                 mesh_index;
     bool                has_colours   = false;
     bool                has_textures  = false;
+    bool                is_collider   = false;
     GltfBufferViewInfo  gltf_buffer_view_info;
     MeshPositionIndices mesh_position_indices;
     
@@ -69,7 +70,7 @@ class Glb_Mesh_Data {
     u32             index_datatype  = 0xFFFFFFFF;
     u16*            index_data = NULL;
     
-    u32 image_buffer_view;
+    u32             image_buffer_view;
     
   public : 
     
@@ -90,10 +91,9 @@ class Glb_Mesh_Data {
       texcoord0_byte_length = tex_coord0_buffer_view_data.byte_length;
       texcoord0_count       = tex_coord0_accessor_data.count;
       if ( texcoord0_byte_length > 0 && texcoord0_count > 0 ) {
-        has_textures = true;
+        has_textures    = true;
         byte_offset     = tex_coord0_buffer_view_data.byte_offset;
         texcoord0_data  = ( f32* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
-        colour_datatype = get_datatype_from_accessors_string ( tex_coord0_accessor_data.type );
       }
       
       colour0_byte_length  = colour0_buffer_view_data.byte_length;
@@ -116,9 +116,10 @@ class Glb_Mesh_Data {
         SDL_LogInfo( SDL_LOG_CATEGORY_ERROR, "ERROR - Indices type is not u16 as expected\n" );
       }
       
-      vertex_datatype = get_datatype_from_accessors_string ( vertex_accessor_data.type );
-      normal_datatype = get_datatype_from_accessors_string ( normal_accessor_data.type );
-      index_datatype  = get_datatype_from_accessors_string ( index_accessor_data.type );
+      vertex_datatype     = get_datatype_from_accessors_string ( vertex_accessor_data.type );
+      normal_datatype     = get_datatype_from_accessors_string ( normal_accessor_data.type );
+      index_datatype      = get_datatype_from_accessors_string ( index_accessor_data.type );
+      texcoord0_datatype  = get_datatype_from_accessors_string ( tex_coord0_accessor_data.type );
       
     }
     
@@ -130,6 +131,14 @@ class Glb_Mesh_Data {
       return has_textures;
     }
     
+    void set_is_collider ( bool is_collider_in ) {
+      is_collider = is_collider_in;
+    }
+    
+    bool get_is_collider() {
+      return is_collider;
+    }
+    
     u32 get_byte_length ( const char* type ) {
       u32 result = 0xFFFFFFFF;
       
@@ -139,6 +148,8 @@ class Glb_Mesh_Data {
         result = normal_buffer_view_data.byte_length;
       } else if ( strings_are_equal ( type, "INDEX" ) ) {
         result = index_buffer_view_data.byte_length;
+      } else if ( strings_are_equal ( type, "TEXCOORD0" ) ) {
+        result = tex_coord0_buffer_view_data.byte_length;
       }
       
       return result;
@@ -162,13 +173,13 @@ class Glb_Mesh_Data {
       
       mesh_position_indices       = get_mesh_position_indices ( mesh_index, parsed_json );
       
-      vertex_accessor_data        = get_accessor_data ( mesh_position_indices.vertices, parsed_json );
-      normal_accessor_data        = get_accessor_data ( mesh_position_indices.normals, parsed_json );
-      index_accessor_data         = get_accessor_data ( mesh_position_indices.indices, parsed_json );
+      vertex_accessor_data        = get_accessor_data ( mesh_position_indices.vertices      , parsed_json );
+      normal_accessor_data        = get_accessor_data ( mesh_position_indices.normals       , parsed_json );
+      index_accessor_data         = get_accessor_data ( mesh_position_indices.indices       , parsed_json );
       
-      vertex_buffer_view_data     = get_buffer_view_data ( vertex_accessor_data.buffer_view, parsed_json );
-      normal_buffer_view_data     = get_buffer_view_data ( normal_accessor_data.buffer_view, parsed_json );
-      index_buffer_view_data      = get_buffer_view_data ( index_accessor_data.buffer_view, parsed_json );
+      vertex_buffer_view_data     = get_buffer_view_data ( vertex_accessor_data.buffer_view , parsed_json );
+      normal_buffer_view_data     = get_buffer_view_data ( normal_accessor_data.buffer_view , parsed_json );
+      index_buffer_view_data      = get_buffer_view_data ( index_accessor_data.buffer_view  , parsed_json );
       
       if ( mesh_position_indices.texcoord_0_populated ) {
         tex_coord0_accessor_data    = get_accessor_data ( mesh_position_indices.texcoord_0, parsed_json );
@@ -247,13 +258,15 @@ class Glb_imported_object {
     u32             texture_buffer_view     = 0;
     BufferViewData  texture_buffer_view_data;
     
-    bool            has_textures    = false;
-    bool            has_any_errors  = false;
+    bool            has_textures      = false;
+    bool            has_any_errors    = false;
+    bool            has_collider_mesh = false;
+    bool            exclude_colliders = true; // when importing meshes, do we skip importing the collier?
     
   public :
     
     // constructor
-    Glb_imported_object ( const char* filepath_in, u32 filepath_length_in = 0 ) {
+    Glb_imported_object ( const char* filepath_in, u32 filepath_length_in = 0, bool exclude_colliders_in = false ) {
       
       u32 filepath_length = filepath_length_in;
       
@@ -269,7 +282,7 @@ class Glb_imported_object {
       
     }
     
-    bool glb_mesh_has_colours( u32 mesh_index ) {
+    bool glb_mesh_has_colours ( u32 mesh_index ) {
       return mesh_data_array [ mesh_index ].mesh_has_colours();
     }
     
@@ -300,9 +313,13 @@ class Glb_imported_object {
       int fadsfdasf = 19;
     }
     
-    void set_totol_mesh_count () {
-      u32 this_mesh_count = count_meshes ( parsed_json );
-      mesh_count = this_mesh_count;
+    void set_total_mesh_count ( u32 set_hardcoded_count = 0 ) {
+      if ( set_hardcoded_count > 0 ) {
+        mesh_count = set_hardcoded_count;
+      } else {
+        u32 this_mesh_count = count_meshes ( parsed_json );
+        mesh_count = this_mesh_count;
+      }
     }
     
     u32 get_total_mesh_count () {
@@ -315,13 +332,13 @@ class Glb_imported_object {
       return result;
     }
     
-    u32 get_mesh_element_count( u32 mesh_index, const char* type ) {
+    u32 get_mesh_element_count ( u32 mesh_index, const char* type ) {
       u32 result = 0xFFFFFFFF;
       result = mesh_data_array[ mesh_index ].get_count( type );
       return result;
     }
     
-    void populate_mesh_data() {
+    void populate_mesh_data () {
       
       size_t bytes = size_t ( mesh_count * sizeof( Glb_Mesh_Data ) );
       mesh_data_array = ( Glb_Mesh_Data* ) malloc ( bytes );
@@ -329,10 +346,20 @@ class Glb_imported_object {
       total_vertex_count  = 0;
       total_index_count   = 0;
       
+      u32 collider_count  = 0;
+      
       for ( u32 i = 0; i < mesh_count; i++ ) {
-        mesh_data_array[ i ].set_mesh_index ( i );
-        mesh_data_array[ i ].set_buffer_view_data ( parsed_json);
-        mesh_data_array[ i ].populate_mesh_data( glb_file_binary_data_pointer );
+        
+        u32 this_index    = get_mesh_number_from_nodes( parsed_json, i );
+        bool is_collider  = mesh_is_collider( parsed_json, i );
+        if ( is_collider ) {
+          collider_count++;
+        }
+        
+        mesh_data_array[ this_index ].set_mesh_index ( this_index );
+        mesh_data_array[ this_index ].set_buffer_view_data ( parsed_json );
+        mesh_data_array[ this_index ].populate_mesh_data ( glb_file_binary_data_pointer );
+        mesh_data_array[ this_index ].set_is_collider ( is_collider );
         
         u32 this_vertex_count = mesh_data_array[ i ].get_count( "VERTEX" );
         u32 this_index_count  = mesh_data_array[ i ].get_count( "INDEX" );
@@ -340,6 +367,26 @@ class Glb_imported_object {
         total_index_count    += this_index_count;
         
         int f = 43;
+      }
+      
+      if ( collider_count > 0 && exclude_colliders ) {
+        // rebuild array without colliders
+        Glb_Mesh_Data* old_data = ( Glb_Mesh_Data* ) malloc ( bytes );
+        memcpy( ( void* ) old_data, ( void* ) mesh_data_array, bytes );
+        free ( mesh_data_array );
+        size_t new_bytes = size_t ( ( mesh_count - collider_count ) * sizeof( Glb_Mesh_Data ) );
+        mesh_data_array = ( Glb_Mesh_Data* ) malloc ( new_bytes );
+        u32 target_index = 0;
+        for ( u32 i = 0; i < mesh_count; i++ ) {
+          if ( !old_data[ i ].get_is_collider() ) {
+            
+            void* dst = ( void* ) &mesh_data_array[ target_index++ ];
+            void* src = ( void* ) &old_data[ i ];
+            memcpy ( dst, src, sizeof( Glb_Mesh_Data ) );
+            
+          }
+        }
+        set_total_mesh_count ( ( mesh_count - collider_count ) );
       }
     }
     
@@ -372,7 +419,7 @@ class Glb_imported_object {
       return result;
     }
     
-    void import_glb_file() {
+    void import_glb_file () {
       
       glb_file = read_entire_file ( filepath );
       read_file_offsets();
@@ -382,7 +429,7 @@ class Glb_imported_object {
       }
       
       update_json();
-      set_totol_mesh_count();
+      set_total_mesh_count();
       populate_mesh_data();
       populate_image_data();
       // calculate_data_total_bytes( "VERTEX" );
@@ -426,7 +473,7 @@ class Glb_imported_object {
           GLCall( glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, texture_width, texture_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data ) );
           GLCall( glBindTexture( GL_TEXTURE_2D, tbos ) );
           int dfasfdasfdas = 7;
-    
+          
         }
     }
     
@@ -434,11 +481,11 @@ class Glb_imported_object {
       f32* result = NULL;
       
       if ( strings_are_equal ( type, "VERTEX" ) ) {
-        result = mesh_data_array[ mesh_index ].get_float_data_pointer( type );
+        result = mesh_data_array[ mesh_index ].get_float_data_pointer ( type );
       } else if ( strings_are_equal ( type, "NORMAL" ) ) {
-        result = mesh_data_array[ mesh_index ].get_float_data_pointer( type );
+        result = mesh_data_array[ mesh_index ].get_float_data_pointer ( type );
       } else if ( strings_are_equal ( type, "TEXCOORD0" ) ) {
-        result = mesh_data_array[ mesh_index ].get_float_data_pointer( type );
+        result = mesh_data_array[ mesh_index ].get_float_data_pointer ( type );
       }
       
       return result;

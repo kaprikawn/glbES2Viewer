@@ -59,7 +59,7 @@ class Entity_Class {
         result = SHADER_TYPE_VERTEX_COLOURS_NO_LIGHT;
       }
       
-      result = SHADER_TYPE_DEBUG;
+      // result = SHADER_TYPE_DEBUG;
       
       this_mesh -> shader_data_index = result;
       compile_shader_by_type_id ( result );
@@ -98,6 +98,7 @@ class Entity_Class {
         f32* glb_texcoord0_data = NULL;
         if ( glb_imported_object.mesh_has_textures( i ) ) {
           glb_texcoord0_data = glb_imported_object.get_float_data_pointer( i, "TEXCOORD0" );
+          has_texture = true;
         }
         f32* glb_colour0_data = NULL;
         u32 color_accessor_data_type;
