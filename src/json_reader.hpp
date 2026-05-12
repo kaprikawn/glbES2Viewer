@@ -149,6 +149,19 @@ u32 count_meshes ( nlohmann::json  parsed_json ) {
   return result;
 }
 
+u32 get_mesh_number_from_nodes ( nlohmann::json  parsed_json, u32 node_index ) {
+  u32 result = parsed_json [ "nodes" ][ node_index ][ "mesh" ];
+  return result;
+}
+
+bool mesh_is_collider ( nlohmann::json  parsed_json, u32 node_index ) {
+  bool result = false;
+  std::string mesh_name = parsed_json [ "nodes" ][ node_index ][ "name" ];
+  if ( strings_are_equal ( "Collider", mesh_name.c_str() ) ) {
+    result = true;
+  }
+  return result;
+}
 
 void populate_mesh_name ( u32 target_mesh_index, nlohmann::json parsed_json, char* mesh_name ) {
   return; // @TODO

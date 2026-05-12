@@ -16,6 +16,7 @@ struct Mesh {
   u16*            index_data;
   u32             vertex_offset_in_gl_buffer_in_bytes;
   u32             index_offset_in_gl_buffer_in_bytes;
+  u32             shader_data_index = 0xFFFFFFFF;
 };
 
 f32 normalize_colour ( u8 value ) {
@@ -35,7 +36,7 @@ class Entity_Class {
   public : 
     
     // constructor - transfer data across from the glb object
-    Entity_Class( Glb_imported_object glb_imported_object ) {
+    Entity_Class ( Glb_imported_object glb_imported_object ) {
       
       u32 current_gl_array_buffer_offset          = 0;
       u32 current_gl_element_array_buffer_offset  = 0;
@@ -44,6 +45,10 @@ class Entity_Class {
       mesh_array = ( Mesh* ) malloc ( ( size_t )( sizeof( Mesh ) * mesh_count ) );
       
       for ( u32 i = 0; i < mesh_count; i++ ) {
+        
+        bool this_mesh_has_colours = glb_imported_object.glb_has_colours();
+        bool this_mesh_has_textures = false;
+        
         u32 this_vertex_count = glb_imported_object.get_mesh_element_count( i, "VERTEX" );
         u32 this_index_count  = glb_imported_object.get_mesh_element_count( i, "INDEX" );
         

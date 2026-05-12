@@ -4,7 +4,33 @@
 #include "sdl.hpp"
 #include "strings.hpp"
 
-u32 compileShader( u32 type, const char* source ) {
+enum Shader_Types {
+    SHADER_TYPE_TEXTURED_LIGHT_PER_VERTEX
+  , SHADER_TYPE_TEXTURED_LIGHT_PER_FRAGMENT
+  , SHADER_TYPE_VERTEX_COLOURS_LIGHT_PER_VERTEX
+  , SHADER_TYPE_VERTEX_COLOURS_LIGHT_PER_FRAGMENT
+  , SHADER_TYPE_VERTEX_COLOURS_NO_LIGHT
+  , SHADER_TYPE_DEBUG
+  , SHADER_TYPE_NUM_VALUES
+};
+
+struct Shader_Data {
+  u32   shader_id = 0xFFFFFFFF; // referred to as 'program' in docs
+  s32   position_attribute_location;
+  s32   normal_attribute_location;
+  s32   colour_attribute_location;
+  s32   texcoord0_attribute_location;
+  s32   mvp_uniform_location;
+  bool  has_normals   = false;
+  bool  has_texture   = false;
+  bool  has_colours   = false;
+  bool  uses_lighting = false;
+};
+
+const u32   shader_types_num_values = SHADER_TYPE_NUM_VALUES;
+Shader_Data shader_data [ shader_types_num_values ];
+
+u32 compileShader ( u32 type, const char* source ) {
   
   u32 result;
   
@@ -33,7 +59,7 @@ enum ShaderCompilationTypes {
   SHADERTYPENONE = -1, VERTEXSHADER = 0, FRAGMENTSHADER = 1
 };
 
-u32 createShader( ReadFileResult shader_file ) {
+u32 createShader ( ReadFileResult shader_file ) {
   
   u32 result;
   

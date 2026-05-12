@@ -30,7 +30,9 @@ class Glb_Mesh_Data {
   
   private : 
     u32                 mesh_index;
-    bool                has_colours = false;
+    bool                has_colours   = false;
+    bool                has_textures  = false;
+    bool                is_collider   = false;
     GltfBufferViewInfo  gltf_buffer_view_info;
     MeshPositionIndices mesh_position_indices;
     
@@ -75,7 +77,7 @@ class Glb_Mesh_Data {
       
       if( has_colours ) {
         byte_offset         = colour0_buffer_view_data.byte_offset;
-        colour0_data         = ( f32* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
+        colour0_data        = ( f32* )( ( char* ) glb_file_binary_data_pointer + byte_offset );
         colour_datatype     = get_datatype_from_accessors_string ( colour0_accessor_data.type );
       }
       
@@ -88,6 +90,10 @@ class Glb_Mesh_Data {
         SDL_LogInfo( SDL_LOG_CATEGORY_ERROR, "ERROR - Indices type is not u16 as expected\n" );
       }
       
+    }
+    
+    void set_is_collider ( bool is_collider_in ) {
+      is_collider = is_collider_in;
     }
     
     bool mesh_has_colours() {
@@ -124,19 +130,18 @@ class Glb_Mesh_Data {
       
       mesh_position_indices       = get_mesh_position_indices ( mesh_index, parsed_json );
       
-      vertex_accessor_data        = get_accessor_data ( mesh_position_indices.vertices, parsed_json );
-      normal_accessor_data        = get_accessor_data ( mesh_position_indices.normals, parsed_json );
-      index_accessor_data         = get_accessor_data ( mesh_position_indices.indices, parsed_json );
-      tex_coord0_accessor_data    = get_accessor_data ( mesh_position_indices.texcoord_0, parsed_json );
-      colour0_accessor_data       = get_accessor_data ( mesh_position_indices.colour_0, parsed_json );
+      vertex_accessor_data        = get_accessor_data ( mesh_position_indices.vertices          , parsed_json );
+      normal_accessor_data        = get_accessor_data ( mesh_position_indices.normals           , parsed_json );
+      index_accessor_data         = get_accessor_data ( mesh_position_indices.indices           , parsed_json );
+      tex_coord0_accessor_data    = get_accessor_data ( mesh_position_indices.texcoord_0        , parsed_json );
+      colour0_accessor_data       = get_accessor_data ( mesh_position_indices.colour_0          , parsed_json );
       
-      vertex_buffer_view_data     = get_buffer_view_data ( vertex_accessor_data.buffer_view, parsed_json );
-      normal_buffer_view_data     = get_buffer_view_data ( normal_accessor_data.buffer_view, parsed_json );
-      index_buffer_view_data      = get_buffer_view_data ( index_accessor_data.buffer_view, parsed_json );
-      tex_coord0_buffer_view_data = get_buffer_view_data ( tex_coord0_accessor_data.buffer_view, parsed_json );
-      colour0_buffer_view_data    = get_buffer_view_data ( colour0_accessor_data.buffer_view, parsed_json );
+      vertex_buffer_view_data     = get_buffer_view_data ( vertex_accessor_data.buffer_view     , parsed_json );
+      normal_buffer_view_data     = get_buffer_view_data ( normal_accessor_data.buffer_view     , parsed_json );
+      index_buffer_view_data      = get_buffer_view_data ( index_accessor_data.buffer_view      , parsed_json );
+      tex_coord0_buffer_view_data = get_buffer_view_data ( tex_coord0_accessor_data.buffer_view , parsed_json );
+      colour0_buffer_view_data    = get_buffer_view_data ( colour0_accessor_data.buffer_view    , parsed_json );
       
-      int g = 4;
     }
     
     u32 get_binary_offset( const char* type ) {
@@ -178,8 +183,8 @@ class Glb_imported_object {
     char*           filepath = NULL;
     u32             filesize;
     ReadFileResult  glb_file;
-    GltfHeader*     gltf_header; // no need to free, points to another pointer
-    char*           glb_file_binary_data_pointer; // no need to free, points to another pointer
+    GltfHeader*     gltf_header;                    // no need to free, points to another pointer
+    char*           glb_file_binary_data_pointer;   // no need to free, points to another pointer
     char*           json_header_string = NULL;
     u32             json_header_bytes;
     nlohmann::json  parsed_json;
@@ -191,8 +196,8 @@ class Glb_imported_object {
     u32             total_vertex_count      = 0;
     u32             total_index_count       = 0;
     
-    bool            has_colours = false;
-    bool            has_any_errors = false;
+    bool            has_colours             = false;
+    bool            has_any_errors          = false;
     
   public :
     
@@ -272,10 +277,19 @@ class Glb_imported_object {
       total_vertex_count  = 0;
       total_index_count   = 0;
       
+      u32 collider_count  = 0;
+      
       for ( u32 i = 0; i < mesh_count; i++ ) {
-        mesh_data_array[ i ].set_mesh_index ( i );
-        mesh_data_array[ i ].set_buffer_view_data ( parsed_json);
-        mesh_data_array[ i ].populate_mesh_data( glb_file_binary_data_pointer );
+        u32 this_index    = get_mesh_number_from_nodes ( parsed_json, i );
+        bool is_collider  = mesh_is_collider ( parsed_json, i );
+        if ( is_collider ) {
+          collider_count++;
+        }
+        
+        mesh_data_array[ this_index ].set_mesh_index ( this_index );
+        mesh_data_array[ this_index ].set_buffer_view_data ( parsed_json );
+        mesh_data_array[ this_index ].populate_mesh_data ( glb_file_binary_data_pointer );
+        mesh_data_array[ this_index ].set_is_collider ( is_collider );
         
         u32 this_vertex_count = mesh_data_array[ i ].get_count( "VERTEX" );
         u32 this_index_count  = mesh_data_array[ i ].get_count( "INDEX" );
