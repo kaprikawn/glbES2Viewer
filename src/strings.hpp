@@ -10,11 +10,49 @@ enum ascii_chars { ASCII_NUL, ASCII_SOH, ASCII_STX, ASCII_ETX, ASCII_EOT, ASCII_
 
 
 struct ReadFileResult {
-  u32   contents_size;
-  void* contents;
+  u32   contents_size = 0;
+  void* contents      = nullptr;
 };
 
-inline u32 string_length( const char* string ) {
+class String {
+  private :
+    const char* string_data         = nullptr;
+    char*       string_data_loading = nullptr;
+    u32         length              = 0;
+  public :
+    // constructor
+    String ( const char* string_in, u32 length_in = 0 ) {
+      length = strlen ( string_in );
+      if ( length > 0 ) {
+        string_data_loading = ( char* ) malloc ( length + 1 );
+        for( u32 i = 0; i < length; i++ ) {
+          string_data_loading[ i ] = string_in[ i ];
+        }
+        string_data_loading [ length ] = '\0';
+      }
+      
+      string_data = &string_data_loading [ 0 ];
+      
+    }
+    
+    u32 get_length () {
+      return length;
+    }
+    
+    const char* get_string_data () {
+      return string_data;
+    }
+    
+    ~String () {
+      if ( string_data_loading ) {
+        free ( string_data_loading );
+        // SDL_LogInfo ( SDL_LOG_CATEGORY_APPLICATION, "Freed string data\n" );
+      }
+    }
+};
+
+
+inline u32 string_length ( const char* string ) {
   // length NOT including \0
   u32 result = 0;
   for( u32 i = 0; string[ i ] != '\0'; i++ )
@@ -22,25 +60,25 @@ inline u32 string_length( const char* string ) {
   return result;
 }
 
-inline void null_char_buffer( char* target, u32 length ) {
+inline void null_char_buffer ( char* target, u32 length ) {
   // TODO : replace with memset?
   for( u32 i = 0; i < length; i++ ) {
     target[ i ] = '\0';
   }
 }
 
-inline char* init_char_star( u32 length ) {
+inline char* init_char_star ( u32 length ) {
   char* result = ( char* )malloc( length );
   null_char_buffer( result, length );
   return result;
 }
 
-inline void copy_string_into_char_star( const char* src, char* dest, u32 length ) {
+inline void copy_string_into_char_star ( const char* src, char* dest, u32 length ) {
   for( u32 i = 0; i < length; i++ )
     dest[ i ] = src[ i ];
 }
 
-inline void remove_crlf( ReadFileResult* read_file_result ) {
+inline void remove_crlf ( ReadFileResult* read_file_result ) {
   
   uchar* this_char = ( uchar* ) read_file_result -> contents;
   
@@ -52,7 +90,7 @@ inline void remove_crlf( ReadFileResult* read_file_result ) {
   }
 }
 
-inline char* concat( const char* str1, const char* str2 ) {
+inline char* concat ( const char* str1, const char* str2 ) {
   ///////////////////////////////////////////////////////
   // REMEMBER TO FREE RESULT AFTER YOU'RE DONE WITH IT //
   ///////////////////////////////////////////////////////
@@ -88,12 +126,12 @@ inline char* assets_dir_and_filename ( const char* filename ) {
   return result;
 }
 
-inline u32 safeTruncateUInt64( u64 value ) {
-  u32 result = ( u32 )value;
+inline u32 safeTruncateUInt64 ( u64 value ) {
+  u32 result = ( u32 ) value;
   return result;
 }
 
-bool32 strings_are_equal( const char* str1, const char* str2 ) {
+bool32 strings_are_equal ( const char* str1, const char* str2 ) {
   u32 len1 = string_length( str1 );
   u32 len2 = string_length( str2 );
   if( len1 != len2 )
@@ -111,7 +149,7 @@ bool32 strings_are_equal( const char* str1, const char* str2 ) {
 
 #include <shlwapi.h>
 
-inline u32 get_filesize( const char* filepath ) {
+inline u32 get_filesize ( const char* filepath ) {
   u32 result = 0;
   LARGE_INTEGER filesize;
   HANDLE fh = CreateFileA( filepath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0 );
@@ -125,7 +163,7 @@ inline u32 get_filesize( const char* filepath ) {
   return result;
 }
 
-inline ReadFileResult read_entire_file( const char* filepath ) {
+ReadFileResult read_entire_file ( const char* filepath ) {
   
   ReadFileResult result = {};
   
@@ -148,7 +186,15 @@ inline ReadFileResult read_entire_file( const char* filepath ) {
   return result;
 }
 
-void read_entire_file_into_memory( const char* filepath, ReadFileResult* result ) {
+void free_read_file_result ( ReadFileResult* read_file_result ) {
+  if ( read_file_result -> contents ) {
+    VirtualFree ( read_file_result -> contents, read_file_result -> contents_size, MEM_RELEASE );
+    read_file_result -> contents = 0;
+    read_file_result -> contents_size = 0;
+  }
+}
+
+void read_entire_file_into_memory ( const char* filepath, ReadFileResult* result ) {
   
   HANDLE fh = CreateFileA( filepath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0 );
   
@@ -173,11 +219,11 @@ void read_entire_file_into_memory( const char* filepath, ReadFileResult* result 
   CloseHandle( fh );
 }
 
-void free_memory( void* memory, u32 size ) {
+void free_memory ( void* memory, u32 size ) {
   VirtualFree( ( LPVOID )memory, size, MEM_RELEASE );
 }
 
-bool32 fileExists( const char* filepath ) {
+bool32 fileExists ( const char* filepath ) {
   bool32 result = false;
   int retval;
   retval = PathFileExistsA( ( char* )filepath );
@@ -193,7 +239,7 @@ bool32 fileExists( const char* filepath ) {
 #include <fcntl.h>
 #include <unistd.h>
 
-bool fileExists( const char* filepath ) {
+bool fileExists ( const char* filepath ) {
   if( FILE *file = fopen( filepath, "r" ) ) {
     fclose( file );
     return true;
@@ -202,14 +248,14 @@ bool fileExists( const char* filepath ) {
   return false;
 }
 
-inline u32 get_filesize( const char* filepath ) {
+inline u32 get_filesize ( const char* filepath ) {
   u32 result = 0;
   // TODO
   return result;
 }
 
 
-ReadFileResult read_entire_file( const char* filepath ) {
+ReadFileResult read_entire_file ( const char* filepath ) {
   
   ReadFileResult result = {};
   if( !fileExists( filepath ) ) {
@@ -217,7 +263,7 @@ ReadFileResult read_entire_file( const char* filepath ) {
     return result;
   }
   
-  int fh = open( filepath, O_RDONLY );
+  int fh = open ( filepath, O_RDONLY );
   if( fh == -1 )
     return result;
     
@@ -257,7 +303,7 @@ ReadFileResult read_entire_file( const char* filepath ) {
   return result;
 }
 
-void free_memory( void* memory, u32 size ) {
+void free_memory ( void* memory, u32 size ) {
   // TODO
 }
 
